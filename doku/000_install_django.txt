@@ -65,7 +65,6 @@ mkdir -p apps/partners
 python manage.py startapp partners apps/partners
 mkdir -p apps/partners/management/commands
 mkdir -p apps/partners/models
-# falls von startapp angelegt:
 rm -f apps/partners/models.py
 cp apps/core/models/__init__.py apps/partners/models/
 python manage.py check
