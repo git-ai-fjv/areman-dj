@@ -50,7 +50,7 @@ class ProductMedia(models.Model):
         return f"[org={self.organization}] {scope} {self.role} #{self.id}"
 
     class Meta:
-        db_table = "product_media"
+        #db_table = "product_media"
         indexes = [
             models.Index(fields=("organization",), name="idx_product_media_org"),
             models.Index(fields=("product",), name="idx_product_media_product"),

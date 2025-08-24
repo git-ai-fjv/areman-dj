@@ -58,7 +58,7 @@ class ProductVariant(models.Model):
         return f"[org={self.organization}] SKU={self.sku} (product_id={self.product_id})"
 
     class Meta:
-        db_table = "product_variant"
+        #db_table = "product_variant"
         # indexes = [
         #     models.Index(fields=("organization",), name="idx_variant_org"),
         #     models.Index(fields=("product",), name="idx_variant_product"),
