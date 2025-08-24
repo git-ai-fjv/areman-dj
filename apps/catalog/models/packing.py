@@ -34,6 +34,7 @@ class Packing(models.Model):
     organization = models.ForeignKey(
         "core.Organization",
         on_delete=models.PROTECT,  # ON DELETE RESTRICT
+        related_name="packings",
     )
 
     packing_code = models.SmallIntegerField()

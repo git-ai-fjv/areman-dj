@@ -23,6 +23,7 @@ class Product(models.Model):
     organization = models.ForeignKey(
         "core.Organization",
         on_delete=models.PROTECT,
+        related_name="products",
     )
 
     name = models.CharField(max_length=200)
@@ -32,6 +33,7 @@ class Product(models.Model):
     manufacturer = models.ForeignKey(
         "catalog.Manufacturer",
         on_delete=models.PROTECT,
+        related_name="products",
     )
 
     manufacturer_part_number = models.CharField(max_length=100)

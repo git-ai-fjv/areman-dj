@@ -15,6 +15,7 @@ class ProductGroup(models.Model):
     organization = models.ForeignKey(
         "core.Organization",
         on_delete=models.PROTECT,  # maps to ON DELETE RESTRICT
+        related_name="product_groups",
     )
 
     # ⚠ Field names remain unchanged to avoid unintended schema changes.

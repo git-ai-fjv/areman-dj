@@ -15,6 +15,7 @@ class Channel(models.Model):
     organization = models.ForeignKey(
         "core.Organization",
         on_delete=models.PROTECT,
+        related_name="channels",
     )
 
     channel_code = models.CharField(max_length=20)
@@ -25,6 +26,8 @@ class Channel(models.Model):
     base_currency = models.ForeignKey(
         "core.Currency",
         on_delete=models.PROTECT,
+        related_name="channels",
+
     )
 
     is_active = models.BooleanField(default=True)

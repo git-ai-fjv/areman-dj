@@ -16,18 +16,23 @@ class ProductMedia(models.Model):
     organization = models.ForeignKey(
         "core.Organization",
         on_delete=models.PROTECT,
+        related_name="products_media",
+
     )
 
     # product / variant Bezug
     product = models.ForeignKey(
         "catalog.Product",
         on_delete=models.PROTECT,
+        related_name="products_media",
+
     )
     variant = models.ForeignKey(
         "catalog.ProductVariant",
         on_delete=models.PROTECT,
         null=True,
         blank=True,
+        related_name="products_media",
     )
 
     # Medien-Metadaten

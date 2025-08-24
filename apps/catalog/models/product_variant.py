@@ -17,24 +17,29 @@ class ProductVariant(models.Model):
     organization = models.ForeignKey(
         "core.Organization",
         on_delete=models.PROTECT,
+        related_name="product_variants",
     )
 
     # product_id BIGINT → FK to catalog.Product(id)
     product = models.ForeignKey(
         "catalog.Product",
         on_delete=models.PROTECT,
+        related_name="product_variants",
     )
     packing = models.ForeignKey(
         "catalog.Packing",
         on_delete=models.PROTECT,
+        related_name="product_variants",
     )
     origin = models.ForeignKey(
         "catalog.Origin",
         on_delete=models.PROTECT,
+        related_name="product_variants",
     )
     state = models.ForeignKey(
         "catalog.State",
         on_delete=models.PROTECT,
+        related_name="product_variants",
     )
 
     # Identity & scanning
