@@ -22,5 +22,5 @@ class Organization(models.Model):
         verbose_name_plural = "Organizations"
 
     def __str__(self) -> str:
-        return f"{self.org_code} — {self.org_description or 'Organization'}"
+        return f"{self.org_description or 'Organization'}"
 
