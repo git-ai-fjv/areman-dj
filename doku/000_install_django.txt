@@ -1,0 +1,150 @@
+django-admin startproject config .
+mkdir -p config/settings
+mv config/settings.py config/settings/base.py
+printf "from .base import *\n" > config/settings/__init__.py
+touch config/settings/local.py config/settings/prod.py
+
+mkdir -p apps
+
+python manage.py startapp core apps/core
+
+mkdir -p apps/catalog
+touch apps/__init__.py
+python manage.py startapp catalog apps/catalog
+
+Datei: apps/catalog/apps.py (voll ersetzen)
+
+#!/usr/bin/env python3
+# Created according to the user's permanent Copilot Base Instructions.
+from __future__ import annotations
+from django.apps import AppConfig
+
+
+class CatalogConfig(AppConfig):
+    default_auto_field = "django.db.models.BigAutoField"
+    name = "apps.catalog"
+    verbose_name = "Catalog"
+
+########################################################################################
+Datei: config/settings/base.py
+
+Füge in INSTALLED_APPS hinzu:
+
+python
+Kopieren
+Bearbeiten
+"apps.catalog",
+
+
+mkdir -p apps/core
+python manage.py startapp core apps/core
+mkdir -p apps/core/management/commands
+mkdir -p apps/core/models
+# falls von startapp angelegt:
+rm -f apps/core/models.py
+#cp apps/core/models/__init__.py apps/partners/models/
+python manage.py check
+
+mkdir -p apps/catalog
+python manage.py startapp catalog apps/catalog
+mkdir -p apps/catalog/management/commands
+mkdir -p apps/catalog/models
+rm -f apps/catalog/models.py
+cp apps/core/models/__init__.py apps/catalog/models/
+python manage.py check
+
+mkdir -p apps/partners
+python manage.py startapp partners apps/partners
+mkdir -p apps/partners/management/commands
+mkdir -p apps/partners/models
+# falls von startapp angelegt:
+rm -f apps/partners/models.py
+cp apps/core/models/__init__.py apps/partners/models/
+python manage.py check
+
+#### apps/partners/apps.py ersetzen:
+from __future__ import annotations
+from django.apps import AppConfig
+class PartnersConfig(AppConfig):
+    default_auto_field = "django.db.models.BigAutoField"
+    name = "apps.partners"
+    verbose_name = "Partners"
+
+###### ***************************************************
+### add in setting.py:
+ in INSTALLED_APPS
+ "apps.partners",
+
+#############################################################
+
+mkdir -p apps/pricing
+python manage.py startapp pricing apps/pricing
+mkdir -p apps/pricing/management/commands
+mkdir -p apps/pricing/models
+# falls von startapp angelegt:
+rm -f apps/pricing/models.py
+cp apps/core/models/__init__.py apps/pricing/models/
+python manage.py check
+
+
+#############################################################
+
+mkdir -p apps/procurement
+python manage.py startapp procurement apps/procurement
+mkdir -p apps/procurement/management/commands
+mkdir -p apps/procurement/models
+rm -f apps/procurement/models.py
+cp apps/core/models/__init__.py apps/procurement/models/
+python manage.py check
+
+#############################################################
+
+mkdir -p apps/inventory
+python manage.py startapp inventory apps/inventory
+mkdir -p apps/inventory/management/commands
+mkdir -p apps/inventory/models
+rm -f apps/inventory/models.py
+cp apps/core/models/__init__.py apps/inventory/models/
+python manage.py check
+
+#############################################################
+
+mkdir -p apps/sales
+python manage.py startapp sales apps/sales
+mkdir -p apps/sales/management/commands
+mkdir -p apps/sales/models
+mkdir -p apps/sales/admin
+rm -f apps/sales/models.py
+rm -f apps/sales/admin.py
+cp apps/core/models/__init__.py apps/sales/models/
+cp apps/core/admin/__init__.py apps/sales/admin/
+python manage.py check
+
+#############################################################
+
+mkdir -p apps/ingestion
+python manage.py startapp ingestion apps/ingestion
+mkdir -p apps/ingestion/management/commands
+mkdir -p apps/ingestion/models
+mkdir -p apps/ingestion/admin
+mkdir -p apps/ingestion/services
+mkdir -p apps/ingestion/readers
+rm -f apps/ingestion/models.py
+rm -f apps/ingestion/admin.py
+cp apps/core/models/__init__.py apps/ingestion/models/
+cp apps/core/admin/__init__.py apps/ingestion/admin/
+python manage.py check
+
+
+
+
+python manage.py startapp partners apps/partners
+python manage.py startapp catalog apps/catalog
+python manage.py startapp pricing apps/pricing
+python manage.py startapp inventory apps/inventory
+python manage.py startapp procurement apps/procurement
+python manage.py startapp ingestion apps/ingestion
+python manage.py startapp connectors apps/connectors
+python manage.py startapp audit apps/audit
+python manage.py startapp api apps/api
+
