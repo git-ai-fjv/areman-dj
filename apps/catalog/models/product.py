@@ -56,7 +56,7 @@ class Product(models.Model):
             Value(""),
             Value("g"),
         ),
-        output_field=models.CharField(max_length=200),
+        output_field=models.CharField(max_length=100),
         db_persist=True,
         editable=False,
     )
