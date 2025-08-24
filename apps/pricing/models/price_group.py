@@ -14,6 +14,7 @@ class PriceGroup(models.Model):
     organization = models.ForeignKey(
         "core.Organization",
         on_delete=models.PROTECT,  # ON DELETE RESTRICT equivalent
+        related_name="price_groups",
     )
 
     price_group_code = models.CharField(
