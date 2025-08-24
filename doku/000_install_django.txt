@@ -53,6 +53,14 @@ rm -f apps/catalog/models.py
 cp apps/core/models/__init__.py apps/catalog/models/
 python manage.py check
 
+mkdir -p apps/pricing
+python manage.py startapp pricing apps/pricing
+mkdir -p apps/pricing/management/commands
+mkdir -p apps/pricing/models
+rm -f apps/pricing/models.py
+cp apps/core/models/__init__.py apps/pricing/models/
+python manage.py check
+
 mkdir -p apps/partners
 python manage.py startapp partners apps/partners
 mkdir -p apps/partners/management/commands
