@@ -69,6 +69,16 @@ rm -f apps/partners/models.py
 cp apps/core/models/__init__.py apps/partners/models/
 python manage.py check
 
+
+mkdir -p apps/procurement
+python manage.py startapp procurement apps/procurement
+mkdir -p apps/procurement/management/commands
+mkdir -p apps/procurement/models
+rm -f apps/procurement/models.py
+cp apps/core/models/__init__.py apps/procurement/models/
+python manage.py check
+
+
 #### apps/partners/apps.py ersetzen:
 from __future__ import annotations
 from django.apps import AppConfig
