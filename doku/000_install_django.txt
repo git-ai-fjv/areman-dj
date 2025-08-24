@@ -36,6 +36,9 @@ Bearbeiten
 "apps.catalog",
 
 
+#############################################################
+
+
 mkdir -p apps/core
 python manage.py startapp core apps/core
 mkdir -p apps/core/management/commands
@@ -45,6 +48,9 @@ rm -f apps/core/models.py
 #cp apps/core/models/__init__.py apps/partners/models/
 python manage.py check
 
+#############################################################
+
+
 mkdir -p apps/catalog
 python manage.py startapp catalog apps/catalog
 mkdir -p apps/catalog/management/commands
@@ -53,6 +59,9 @@ rm -f apps/catalog/models.py
 cp apps/core/models/__init__.py apps/catalog/models/
 python manage.py check
 
+#############################################################
+
+
 mkdir -p apps/pricing
 python manage.py startapp pricing apps/pricing
 mkdir -p apps/pricing/management/commands
@@ -60,6 +69,9 @@ mkdir -p apps/pricing/models
 rm -f apps/pricing/models.py
 cp apps/core/models/__init__.py apps/pricing/models/
 python manage.py check
+
+#############################################################
+
 
 mkdir -p apps/partners
 python manage.py startapp partners apps/partners
@@ -69,42 +81,8 @@ rm -f apps/partners/models.py
 cp apps/core/models/__init__.py apps/partners/models/
 python manage.py check
 
-
-mkdir -p apps/procurement
-python manage.py startapp procurement apps/procurement
-mkdir -p apps/procurement/management/commands
-mkdir -p apps/procurement/models
-rm -f apps/procurement/models.py
-cp apps/core/models/__init__.py apps/procurement/models/
-python manage.py check
-
-
-#### apps/partners/apps.py ersetzen:
-from __future__ import annotations
-from django.apps import AppConfig
-class PartnersConfig(AppConfig):
-    default_auto_field = "django.db.models.BigAutoField"
-    name = "apps.partners"
-    verbose_name = "Partners"
-
-###### ***************************************************
-### add in setting.py:
- in INSTALLED_APPS
- "apps.partners",
-
 #############################################################
 
-mkdir -p apps/pricing
-python manage.py startapp pricing apps/pricing
-mkdir -p apps/pricing/management/commands
-mkdir -p apps/pricing/models
-# falls von startapp angelegt:
-rm -f apps/pricing/models.py
-cp apps/core/models/__init__.py apps/pricing/models/
-python manage.py check
-
-
-#############################################################
 
 mkdir -p apps/procurement
 python manage.py startapp procurement apps/procurement
@@ -116,15 +94,6 @@ python manage.py check
 
 #############################################################
 
-mkdir -p apps/inventory
-python manage.py startapp inventory apps/inventory
-mkdir -p apps/inventory/management/commands
-mkdir -p apps/inventory/models
-rm -f apps/inventory/models.py
-cp apps/core/models/__init__.py apps/inventory/models/
-python manage.py check
-
-#############################################################
 
 mkdir -p apps/sales
 python manage.py startapp sales apps/sales
@@ -165,3 +134,13 @@ python manage.py startapp connectors apps/connectors
 python manage.py startapp audit apps/audit
 python manage.py startapp api apps/api
 
+
+mkdir -p apps/inventory
+python manage.py startapp inventory apps/inventory
+mkdir -p apps/inventory/management/commands
+mkdir -p apps/inventory/models
+rm -f apps/inventory/models.py
+cp apps/core/models/__init__.py apps/inventory/models/
+python manage.py check
+
+#############################################################
