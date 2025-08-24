@@ -8,7 +8,7 @@ from django.db.models.functions import Now
 
 
 class ChannelPriceList(models.Model):
-    id = models.BigAutoField(primary_key=True)
+    #id = models.BigAutoField(primary_key=True)
 
     organization = models.ForeignKey(
         "core.Organization",

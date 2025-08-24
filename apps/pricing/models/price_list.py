@@ -7,7 +7,7 @@ from django.db.models.functions import Now
 
 
 class PriceList(models.Model):
-    id = models.AutoField(primary_key=True)
+    #id = models.AutoField(primary_key=True)
 
     organization = models.ForeignKey(
         "core.Organization",
