@@ -13,13 +13,13 @@ class ProductGroupAdmin(admin.ModelAdmin):
     """Admin for catalog.ProductGroup."""
 
     # Keep rows clickable (standing rule). You can adjust the columns later.
-    list_display = ("id", "organization", "item_group_code", "item_group_description")
-    list_display_links = ("id", "item_group_code")
+    list_display = ("id", "organization", "product_group_code", "product_group_description")
+    list_display_links = ("id", "product_group_code")
 
     # Useful search/filter + stable ordering.
-    search_fields = ("item_group_code", "item_group_description")
+    search_fields = ("product_group_code", "product_group_description")
     list_filter = ("organization",)
-    ordering = ("organization", "item_group_code")
+    ordering = ("organization", "product_group_code")
 
     # Performance
     raw_id_fields = ("organization",)

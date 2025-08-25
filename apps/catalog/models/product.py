@@ -5,6 +5,9 @@ from django.db import models
 from django.db.models import F, Value, Func
 from django.db.models.functions import Lower, Now
 
+### restart id: nach loeschen aller rows
+## alter sequence catalog_product_id_seq RESTART WITH 1;
+
 
 class RegexpReplace(Func):
     """PostgreSQL REGEXP_REPLACE(source, pattern, replacement [, flags])."""

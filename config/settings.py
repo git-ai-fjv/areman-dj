@@ -17,9 +17,10 @@ import os
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
+print (f'BASE_DIR: {BASE_DIR =}')
 
-load_dotenv(".env.defaults", override=False)  # commit-friendly defaults
-load_dotenv(BASE_DIR / ".env", override=True)
+load_dotenv(os.path.join(BASE_DIR, ".env.defaults"), override=False)  # commit-friendly defaults
+load_dotenv(os.path.join(BASE_DIR, ".env"), override=True)
 
 
 # Quick-start development settings - unsuitable for production
@@ -49,6 +50,7 @@ INSTALLED_APPS = [
     'apps.partners',
     'apps.procurement',
     'apps.sales',
+    'apps.ingestion',
 ]
 
 MIDDLEWARE = [

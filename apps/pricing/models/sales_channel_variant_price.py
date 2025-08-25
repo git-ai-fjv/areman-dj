@@ -1,5 +1,7 @@
-# apps/pricing/models/product_variant_price.py
+# apps/pricing/models/price.py
 # Created according to the user's Copilot Base Instructions.
+
+
 
 from __future__ import annotations
 
@@ -9,45 +11,50 @@ from django.db.models import Q
 from django.db.models.functions import Now
 
 
-class ProductVariantPrice(models.Model):
+class SalesChannelVariantPrice(models.Model):
     #id = models.BigAutoField(primary_key=True)
+
     # Orga
     organization = models.ForeignKey(
         "core.Organization",
         on_delete=models.PROTECT,
-        related_name="product_variant_prices",
+        related_name="sales_channel_variant_prices",
     )
 
     # Beziehungen
-    variant = models.ForeignKey(
-        "catalog.ProductVariant",
-        on_delete=models.PROTECT,
-        related_name="product_variant_prices",
-    )
+
     price_list = models.ForeignKey(
         "pricing.PriceList",
         on_delete=models.PROTECT,
-        related_name="product_variant_prices",
+        related_name="sales_channel_variant_prices",
     )
 
+    channel_variant = models.ForeignKey(
+        "catalog.ChannelVariant",
+        on_delete=models.PROTECT,
+        related_name="sales_channel_variant_prices",
+    )
+    valid_from = models.DateTimeField()
+
     # Werte/Zeitfenster
-    amount = models.DecimalField(
+    price = models.DecimalField(
         max_digits=12,
         decimal_places=4,
         validators=[MinValueValidator(0)],
     )
-    valid_from = models.DateTimeField()
+
     valid_to = models.DateTimeField(null=True, blank=True)
+    need_update = models.BooleanField(default=False)  # Flag to indicate if the price needs to be updated
 
     # DB-Defaults (Postgres setzt Timestamps)
     created_at = models.DateTimeField(db_default=Now(), editable=False)
     updated_at = models.DateTimeField(db_default=Now(), editable=False)
 
     def __str__(self) -> str:
-        return f"[org={self.organization}] {self.price_list}/{self.variant} @ {self.amount} from {self.valid_from}"
+        return f"[org={self.organization}] {self.price_list}/{self.channel_variant} @ {self.amount} from {self.valid_from}"
 
     class Meta:
-        #db_table = "price"
+        # db_table = "price"
         # indexes = [
         #     models.Index(fields=("organization",), name="idx_price_org"),
         #     models.Index(fields=("price_list", "variant"), name="idx_price_pricelist_variant"),
@@ -62,12 +69,12 @@ class ProductVariantPrice(models.Model):
         # ]
         constraints = [
             models.UniqueConstraint(
-                fields=("variant", "price_list", "valid_from"),
-                name="uniq_price_variant_pricelist_from",
+                fields=("organization", "price_list", "channel_variant", "valid_from"),
+                name="uniq_chanel_var_price_valid",
             ),
             models.CheckConstraint(
-                check=Q(amount__gte=0),
-                name="ck_price_amount_nonneg",
+                check=Q(price__gte=0),
+                name="ck_price_price_nonneg",
             ),
         ]
 

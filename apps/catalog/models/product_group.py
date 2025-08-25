@@ -19,11 +19,11 @@ class ProductGroup(models.Model):
     )
 
     # ⚠ Field names remain unchanged to avoid unintended schema changes.
-    item_group_code = models.CharField(
+    product_group_code = models.CharField(
         max_length=20,
         help_text="Product group code (unique within organization).",
     )
-    item_group_description = models.CharField(
+    product_group_description = models.CharField(
         max_length=200,
         blank=True,
         help_text="Optional description/name of the product group.",
@@ -37,7 +37,7 @@ class ProductGroup(models.Model):
         verbose_name_plural = "Product Groups"
         constraints = [
             models.UniqueConstraint(
-                fields=["organization", "item_group_code"],
+                fields=["organization", "product_group_code"],
                 name="uniq_product_group_org_item_group_code",
             ),
             # NEU: für den Composite-Guard benötigt

@@ -1,5 +1,6 @@
 # apps/catalog/models/channel_variant.py
 # Created according to the user's Copilot Base Instructions.
+# the
 
 from __future__ import annotations
 
@@ -9,6 +10,18 @@ from django.db.models.functions import Now
 
 
 class ChannelVariant(models.Model):
+    """
+    A product variant in a sales channel (e.g. a webshop).
+    Links a ProductVariant to a Channel, with additional fields for
+    publication status, external IDs, and metadata.
+    Represents the availability and configuration of a specific product variant
+    within a specific sales channel.
+    Each ChannelVariant is unique per (organization, channel, variant).
+    1:n relation: A ProductVariant can be linked to multiple Channels via ChannelVariant.
+    1:n relation: A Channel can have multiple ProductVariants via ChannelVariant.
+    1:1 relation: A ChannelVariant links exactly one ProductVariant to one Channel.
+    1:1 relation: A ChannelVariant belongs to exactly one Organization.
+    """
     #id = models.BigAutoField(primary_key=True)
 
     organization = models.ForeignKey(
@@ -71,10 +84,10 @@ class ChannelVariant(models.Model):
             #     name="uniq_channel_item_ext",
             #     condition=Q(shop_item_id__isnull=False) & ~Q(shop_item_id=""),
             # ),
-            models.UniqueConstraint(
-                fields=("channel", "shop_variant_id"),
-                name="uniq_channel_variant_ext",
-                condition=Q(shop_variant_id__isnull=False) & ~Q(shop_variant_id=""),
-            ),
+            # models.UniqueConstraint(
+            #     fields=("channel", "shop_variant_id"),
+            #     name="uniq_channel_variant_ext",
+            #     condition=Q(shop_variant_id__isnull=False) & ~Q(shop_variant_id=""),
+            # ),
         ]
 

@@ -1,0 +1,91 @@
+#!/usr/bin/env python3
+# scripts/debug_product_ops.py
+# Created according to the user's Copilot Base Instructions.
+from __future__ import annotations
+
+from django.db import connection
+
+# 🔌 Bootstrap Django environment
+import scripts.bootstrap_django  # noqa: F401
+
+# with connection.cursor() as cursor:
+#     cursor.execute("select current_database(), current_user, current_schema();")
+#     print("Runtime DB info:", cursor.fetchall())
+
+from apps.catalog.services.channel_ops import upsert_channel
+from apps.catalog.services.product_ops import upsert_product
+from apps.catalog.services.variant_ops import upsert_variant
+from apps.pricing.services.price_list_ops import upsert_price_list
+from apps.catalog.services.channel_variant_ops import upsert_channel_variant
+
+if __name__ == "__main__":
+
+    payload_channel = {
+        "org_code": 1,
+        "channel_code": "WEB",
+        "channel_name": "Webshop",
+        "base_currency_code": "EUR",
+    }
+
+
+    ch, created = upsert_channel(payload_channel)
+    print(f"{ch.pk = } Product: {ch}, created={created}")
+
+    payload_product = {
+        "org_code": 1,
+        "manufacturer_code": 1,
+        "manufacturer_part_number": "ZX-91",
+        "name": "Widget ZX-91",
+        "slug": "widget-zx-91",
+        "product_group_code": "1",
+        "is_active": True,
+    }
+
+    p, created = upsert_product(payload_product)
+
+    print(f"{p.pk = } Product: {p}, created={created}")
+    payload_variant = {
+        "org_code": 1,
+        "product_id": p.pk,
+            "origin_code": "E",
+            "state_code": "N",
+            "packing_code": "1",
+            "weight": "0.250",
+    }
+    v, created = upsert_variant(payload_variant)
+    print(f"{v.pk = } Variant: {v}, created={created}")
+
+    payload_price_list = {
+        "org_code": 1,
+        "price_list_code": "S1",
+        "kind": "S",  # 'S' for sales, 'P' for purchase
+        "currency_code": "EUR",
+        "price_list_description": "Standard Sales Pricelist",
+        "is_active": True,
+    }
+    pl, created = upsert_price_list(payload_price_list)
+    print(f"PriceList: {pl}, created={created}")
+
+# Connect the variant to the channel and price list with a price
+
+    channel_variant_payload = {
+        "org_code": 1,
+        "channel_id": ch.pk,
+        "variant_id": v.pk,
+        "publish": True,
+        "is_active": True,
+        "need_shop_update": False,
+        "shop_product_id": "SKU-9999",
+        "shop_variant_id": "SKU-9999-V1",
+        "last_error": None,
+        "meta_json": {"synced_by": "import", "note": "initial load"},
+    }
+
+    cv, created = upsert_channel_variant(channel_variant_payload)
+    print(f"ChannelVariant: {cv}, created={created}")
+
+### set the price for this variant in this channel and price list
+
+
+
+
