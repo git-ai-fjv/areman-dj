@@ -5,7 +5,6 @@
 from __future__ import annotations
 
 import argparse
-import os
 from pathlib import Path
 import django
 from django.apps import apps
@@ -44,13 +43,13 @@ def generate_mermaid(models_list) -> str:
     """Generate Mermaid ER diagram code for a given list of models."""
     lines: list[str] = ["erDiagram"]
 
-    # --- Legende ---
+    # --- Legend ---
     lines.append("    %% Relation symbols legend")
     for name, symbol in RELATION_SYMBOLS.items():
         lines.append(f"    %% {symbol}  <= {name}")
     lines.append("")
 
-    # Tabellen
+    # Tables
     for model in models_list:
         if not include_model(model):
             continue
@@ -68,7 +67,7 @@ def generate_mermaid(models_list) -> str:
             lines.append(f"        {ftype} {field.name}")
         lines.append("    }")
 
-    # Relationen
+    # Relations
     for model in models_list:
         if not include_model(model):
             continue
@@ -99,9 +98,7 @@ def generate_mermaid(models_list) -> str:
 def write_file(path: Path, code: str):
     path.parent.mkdir(parents=True, exist_ok=True)
     with open(path, "w") as f:
-        f.write("```mermaid\n")
         f.write(code)
-        f.write("\n```")
     print(f"✅ Mermaid ERD written to {path}")
 
 
@@ -139,14 +136,8 @@ if __name__ == "__main__":
 # Eine grosse Datei:
 # ./scripts/gen_mermaid_er.py
 #
-#
 # Eine app pro Datei:
 # ./scripts/gen_mermaid_er.py --per-app
 #
-# andres Ziel:
+# anderes Ziel:
 # ./scripts/gen_mermaid_er.py --per-app --outdir diagrams
-
-
-
-
-
