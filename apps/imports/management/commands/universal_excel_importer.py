@@ -7,6 +7,7 @@ from __future__ import annotations
 import logging
 import math
 import traceback
+import time
 from pathlib import Path
 
 import pandas as pd
@@ -101,18 +102,29 @@ By default, the command looks in:
         file_override: str = options["file"]
         dry_run: bool = options["dry_run"]
 
+        def log_step(step_name: str, last_time: float) -> float:
+            """Log elapsed seconds since last step and return new timestamp."""
+            now = time.time()
+            elapsed = now - last_time
+            self.stdout.write(self.style.NOTICE(f"[Timing] {step_name}: {elapsed:.2f}s"))
+            return now
+
         try:
+            t0 = time.time()
+
             # Supplier
             try:
                 supplier = Supplier.objects.get(supplier_code=supplier_code)
             except Supplier.DoesNotExist:
                 raise CommandError(f"Supplier '{supplier_code}' not found")
+            t0 = log_step("Loaded Supplier", t0)
 
             # Source type (always "file")
             try:
                 source_type = ImportSourceType.objects.get(code="file")
             except ImportSourceType.DoesNotExist:
                 raise CommandError("ImportSourceType 'file' not found")
+            t0 = log_step("Loaded ImportSourceType", t0)
 
             # File
             if file_override:
@@ -123,11 +135,13 @@ By default, the command looks in:
                 file_path = self._find_latest_file(supplier_code)
 
             self.stdout.write(f"Using file: {file_path}")
+            t0 = log_step("Resolved file path", t0)
 
             # Read Excel
             df = pd.read_excel(file_path)
             total = len(df)
             self.stdout.write(f"Found {total} rows in Excel.")
+            t0 = log_step("Read Excel file", t0)
 
             if dry_run:
                 self.stdout.write(self.style.WARNING("[DRY-RUN] Preview only."))
@@ -149,6 +163,7 @@ By default, the command looks in:
                 started_at=timezone.now(),
                 status="running",
             )
+            t0 = log_step("Created ImportRun", t0)
 
             buffer: list[ImportRawRecord] = []
             batch_size = 5000
@@ -175,12 +190,14 @@ By default, the command looks in:
             if buffer:
                 ImportRawRecord.objects.bulk_create(buffer, batch_size)
                 inserted += len(buffer)
+            t0 = log_step(f"Inserted {inserted} records", t0)
 
             # Finalize run
             run.finished_at = timezone.now()
             run.total_records = inserted
             run.status = "success"
             run.save()
+            t0 = log_step("Finalized ImportRun", t0)
 
             self.stdout.write(
                 self.style.SUCCESS(
@@ -204,4 +221,17 @@ By default, the command looks in:
 #   python manage.py universal_excel_importer --supplier SUPP01 --dry-run
 #
 # Spezifische Datei importieren:
-#   python manage.py universal_excel_importer --supplier SUPP01 --file apps/imports/data/SUPP01/2025/08/komatsu_06-25.xlsx
+#   python manage.py universal_excel_importer --supplier SUPP01 --file apps/imports/data/SUPP01/2025/08/test.xlsx
+#
+# Beispielausgabe mit Zeitmessung:
+#   Using file: apps/imports/data/SUPP01/2025/08/test.xlsx
+#   Found 12345 rows in Excel.
+#   [Timing] Loaded Supplier: 0.01s
+#   [Timing] Loaded ImportSourceType: 0.00s
+#   [Timing] Resolved file path: 0.00s
+#   [Timing] Read Excel file: 2.13s
+#   [Timing] Created ImportRun: 0.02s
+#   [Timing] Inserted 12345 records: 4.78s
+#   [Timing] Finalized ImportRun: 0.01s
+#   ImportRun 42 complete — 12345 rows imported.
+
