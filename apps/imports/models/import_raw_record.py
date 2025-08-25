@@ -1,7 +1,6 @@
 # apps/imports/models/import_raw_record.py
 # Created according to the user's permanent Copilot Base Instructions.
 from __future__ import annotations
-
 from django.db import models
 from django.utils import timezone
 
@@ -12,32 +11,31 @@ class ImportRawRecord(models.Model):
     Stores unmodified payloads (JSON, XML, CSV rows, etc.) for auditing and reprocessing.
     """
 
-    supplier = models.ForeignKey(
-        "partners.Supplier",
+    import_run = models.ForeignKey(
+        "imports.ImportRun",
         on_delete=models.CASCADE,
-        related_name="import_raw_records",
-        help_text="Supplier that delivered this raw record.",
+        related_name="raw_records",
+        help_text="Import run this record belongs to.",
     )
-    external_id = models.CharField(
-        max_length=255,
-        help_text="Unique identifier from the external system (if available).",
+
+    line_number = models.IntegerField(
+        help_text="Sequential line number within the import run (starting at 1)."
     )
+
     payload = models.JSONField(
         help_text="Full raw payload from the external source (JSON or converted dict)."
     )
-    fetched_at = models.DateTimeField(
-        default=timezone.now,
-        help_text="Timestamp when this record was fetched from the external system.",
-    )
 
     class Meta:
-        db_table = "partners_import_raw_record"
-        app_label = "imports"  # 🔑 wichtig: gehört jetzt zur App `imports`
-        indexes = [
-            models.Index(fields=["supplier", "external_id"]),
+        verbose_name = "Import Raw Record"
+        verbose_name_plural = "Import Raw Records"
+        constraints = [
+            models.UniqueConstraint(
+                fields=["import_run", "line_number"],
+                name="uniq_import_run_line",
+            )
         ]
-        unique_together = ("supplier", "external_id")
 
     def __str__(self) -> str:
-        return f"{self.supplier.supplier_code}:{self.external_id}"
+        return f"Run {self.import_run_id}, line {self.line_number}"
 
