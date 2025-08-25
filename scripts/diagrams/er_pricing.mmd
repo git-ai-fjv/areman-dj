@@ -1,0 +1,53 @@
+```mermaid
+erDiagram
+    %% Relation symbols legend
+    %% ||--o{  (one-to-many)  <= ForeignKey
+    %% ||--|| (one-to-one)  <= OneToOneField
+    %% }o--o{ (many-to-many)  <= ManyToManyField
+
+    PRICING_CURRENCYRATE {
+        BigAutoField id
+        DecimalField rate
+        DateField rate_date
+        DateTimeField created_at
+        DateTimeField updated_at
+    }
+    PRICING_PRICEGROUP {
+        BigAutoField id
+        CharField price_group_code
+        CharField price_group_description
+    }
+    PRICING_PRICELIST {
+        BigAutoField id
+        CharField price_list_code
+        CharField price_list_description
+        CharField kind
+        BooleanField is_active
+        DateTimeField created_at
+        DateTimeField updated_at
+    }
+    PRICING_SALESCHANNELVARIANTPRICE {
+        BigAutoField id
+        DateTimeField valid_from
+        DecimalField price
+        DateTimeField valid_to
+        BooleanField need_update
+        DateTimeField created_at
+        DateTimeField updated_at
+    }
+    TAX_CLASS {
+        BigAutoField id
+        CharField name
+        DecimalField rate
+        DateTimeField created_at
+        DateTimeField updated_at
+    }
+    CORE_CURRENCY ||--o{ PRICING_CURRENCYRATE : base
+    CORE_CURRENCY ||--o{ PRICING_CURRENCYRATE : quote
+    CORE_ORGANIZATION ||--o{ PRICING_PRICEGROUP : organization
+    CORE_ORGANIZATION ||--o{ PRICING_PRICELIST : organization
+    CORE_CURRENCY ||--o{ PRICING_PRICELIST : currency
+    CORE_ORGANIZATION ||--o{ PRICING_SALESCHANNELVARIANTPRICE : organization
+    PRICING_PRICELIST ||--o{ PRICING_SALESCHANNELVARIANTPRICE : price_list
+    CATALOG_CHANNELVARIANT ||--o{ PRICING_SALESCHANNELVARIANTPRICE : channel_variant
+```

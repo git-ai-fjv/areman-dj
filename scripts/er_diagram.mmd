@@ -1,0 +1,273 @@
+```mermaid
+erDiagram
+    %% Relation symbols legend
+    %% ||--o{  (one-to-many)  <= ForeignKey
+    %% ||--|| (one-to-one)  <= OneToOneField
+    %% }o--o{ (many-to-many)  <= ManyToManyField
+
+    CORE_CURRENCY {
+        CharField code
+        CharField name
+        CharField symbol
+        SmallIntegerField decimal_places
+        BooleanField is_active
+        DateTimeField created_at
+        DateTimeField updated_at
+    }
+    CORE_ORGANIZATION {
+        SmallIntegerField org_code
+        CharField org_description
+    }
+    CATALOG_CHANNEL {
+        AutoField id
+        CharField channel_code
+        CharField channel_name
+        CharField kind
+        BooleanField is_active
+        DateTimeField created_at
+        DateTimeField updated_at
+    }
+    CATALOG_CHANNELVARIANT {
+        BigAutoField id
+        BooleanField publish
+        BooleanField is_active
+        BooleanField need_shop_update
+        CharField shop_product_id
+        CharField shop_variant_id
+        DateTimeField last_synced_at
+        TextField last_error
+        JSONField meta_json
+        DateTimeField created_at
+        DateTimeField updated_at
+    }
+    CATALOG_MANUFACTURER {
+        SmallIntegerField manufacturer_code
+        CharField manufacturer_description
+    }
+    CATALOG_ORIGIN {
+        CharField origin_code
+        CharField origin_description
+    }
+    CATALOG_PACKING {
+        BigAutoField id
+        SmallIntegerField packing_code
+        DecimalField amount
+        CharField packing_short_description
+        CharField packing_description
+    }
+    CATALOG_PRODUCT {
+        BigAutoField id
+        CharField name
+        CharField slug
+        CharField manufacturer_part_number
+        CharField manufacturer_part_number_norm
+        BooleanField is_active
+        DateTimeField created_at
+        DateTimeField updated_at
+    }
+    CATALOG_PRODUCTGROUP {
+        BigAutoField id
+        CharField product_group_code
+        CharField product_group_description
+    }
+    CATALOG_PRODUCTMEDIA {
+        BigAutoField id
+        CharField role
+        SmallIntegerField sort_order
+        CharField alt_text
+        TextField media_url
+        CharField mime
+        IntegerField width_px
+        IntegerField height_px
+        IntegerField file_size
+        BooleanField is_active
+        DateTimeField created_at
+        DateTimeField updated_at
+    }
+    CATALOG_PRODUCTVARIANT {
+        BigAutoField id
+        CharField sku
+        CharField barcode
+        IntegerField customs_code
+        DecimalField weight
+        BooleanField is_active
+        DateTimeField created_at
+        DateTimeField updated_at
+    }
+    CATALOG_STATE {
+        CharField state_code
+        CharField state_description
+    }
+    PRICING_CURRENCYRATE {
+        BigAutoField id
+        DecimalField rate
+        DateField rate_date
+        DateTimeField created_at
+        DateTimeField updated_at
+    }
+    PRICING_PRICEGROUP {
+        BigAutoField id
+        CharField price_group_code
+        CharField price_group_description
+    }
+    PRICING_PRICELIST {
+        BigAutoField id
+        CharField price_list_code
+        CharField price_list_description
+        CharField kind
+        BooleanField is_active
+        DateTimeField created_at
+        DateTimeField updated_at
+    }
+    PRICING_SALESCHANNELVARIANTPRICE {
+        BigAutoField id
+        DateTimeField valid_from
+        DecimalField price
+        DateTimeField valid_to
+        BooleanField need_update
+        DateTimeField created_at
+        DateTimeField updated_at
+    }
+    TAX_CLASS {
+        BigAutoField id
+        CharField name
+        DecimalField rate
+        DateTimeField created_at
+        DateTimeField updated_at
+    }
+    PARTNERS_CUSTOMER {
+        BigAutoField id
+        CharField customer_code
+        BooleanField is_active
+        CharField customer_description
+        CharField contact_name
+        CharField email
+        CharField phone
+        CharField website
+        CharField tax_id
+        CharField address_line1
+        CharField address_line2
+        CharField postal_code
+        CharField city
+        CharField country_code
+        CharField payment_terms
+        DateTimeField created_at
+        DateTimeField updated_at
+    }
+    PARTNERS_SUPPLIER {
+        BigAutoField id
+        CharField supplier_code
+        BooleanField is_active
+        CharField supplier_description
+        CharField contact_name
+        CharField email
+        CharField phone
+        CharField website
+        CharField tax_id
+        CharField address_line1
+        CharField address_line2
+        CharField postal_code
+        CharField city
+        CharField country_code
+        CharField payment_terms
+        BooleanField is_preferred
+        SmallIntegerField lead_time_days
+        DateTimeField created_at
+        DateTimeField updated_at
+    }
+    PROCUREMENT_PURCHASEORDER {
+        BigAutoField id
+        CharField order_number
+        CharField status
+        DateField expected_date
+        TextField notes
+        BooleanField is_active
+        DateTimeField created_at
+        DateTimeField updated_at
+    }
+    PROCUREMENT_PURCHASEORDERLINE {
+        BigAutoField id
+        SmallIntegerField row_no
+        DecimalField qty
+        DecimalField price_at_order
+        TextField note
+        BooleanField is_active
+        DateTimeField created_at
+        DateTimeField updated_at
+    }
+    PROCUREMENT_SUPPLIERPRODUCT {
+        BigAutoField id
+        CharField supplier_sku
+        DecimalField pack_size
+        DecimalField min_order_qty
+        IntegerField lead_time_days
+        BooleanField is_active
+        CharField supplier_description
+        TextField notes
+        DateTimeField created_at
+        DateTimeField updated_at
+    }
+    SALES_SALESORDER {
+        BigAutoField id
+        CharField order_number
+        CharField status
+        DateField expected_date
+        TextField notes
+        BooleanField is_active
+        DateTimeField created_at
+        DateTimeField updated_at
+    }
+    SALES_SALESORDERLINE {
+        BigAutoField id
+        SmallIntegerField row_no
+        DecimalField qty
+        DecimalField price_at_order
+        TextField note
+        BooleanField is_active
+        DateTimeField created_at
+        DateTimeField updated_at
+    }
+    CORE_ORGANIZATION ||--o{ CATALOG_CHANNEL : organization
+    CORE_CURRENCY ||--o{ CATALOG_CHANNEL : base_currency
+    CORE_ORGANIZATION ||--o{ CATALOG_CHANNELVARIANT : organization
+    CATALOG_CHANNEL ||--o{ CATALOG_CHANNELVARIANT : channel
+    CATALOG_PRODUCTVARIANT ||--o{ CATALOG_CHANNELVARIANT : variant
+    CORE_ORGANIZATION ||--o{ CATALOG_PACKING : organization
+    CORE_ORGANIZATION ||--o{ CATALOG_PRODUCT : organization
+    CATALOG_MANUFACTURER ||--o{ CATALOG_PRODUCT : manufacturer
+    CATALOG_PRODUCTGROUP ||--o{ CATALOG_PRODUCT : product_group
+    CORE_ORGANIZATION ||--o{ CATALOG_PRODUCTGROUP : organization
+    CORE_ORGANIZATION ||--o{ CATALOG_PRODUCTMEDIA : organization
+    CATALOG_PRODUCT ||--o{ CATALOG_PRODUCTMEDIA : product
+    CATALOG_PRODUCTVARIANT ||--o{ CATALOG_PRODUCTMEDIA : variant
+    CORE_ORGANIZATION ||--o{ CATALOG_PRODUCTVARIANT : organization
+    CATALOG_PRODUCT ||--o{ CATALOG_PRODUCTVARIANT : product
+    CATALOG_PACKING ||--o{ CATALOG_PRODUCTVARIANT : packing
+    CATALOG_ORIGIN ||--o{ CATALOG_PRODUCTVARIANT : origin
+    CATALOG_STATE ||--o{ CATALOG_PRODUCTVARIANT : state
+    CORE_CURRENCY ||--o{ PRICING_CURRENCYRATE : base
+    CORE_CURRENCY ||--o{ PRICING_CURRENCYRATE : quote
+    CORE_ORGANIZATION ||--o{ PRICING_PRICEGROUP : organization
+    CORE_ORGANIZATION ||--o{ PRICING_PRICELIST : organization
+    CORE_CURRENCY ||--o{ PRICING_PRICELIST : currency
+    CORE_ORGANIZATION ||--o{ PRICING_SALESCHANNELVARIANTPRICE : organization
+    PRICING_PRICELIST ||--o{ PRICING_SALESCHANNELVARIANTPRICE : price_list
+    CATALOG_CHANNELVARIANT ||--o{ PRICING_SALESCHANNELVARIANTPRICE : channel_variant
+    CORE_ORGANIZATION ||--o{ PARTNERS_CUSTOMER : organization
+    CORE_ORGANIZATION ||--o{ PARTNERS_SUPPLIER : organization
+    CORE_ORGANIZATION ||--o{ PROCUREMENT_PURCHASEORDER : organization
+    PARTNERS_SUPPLIER ||--o{ PROCUREMENT_PURCHASEORDER : supplier
+    CORE_CURRENCY ||--o{ PROCUREMENT_PURCHASEORDER : currency
+    CORE_ORGANIZATION ||--o{ PROCUREMENT_PURCHASEORDERLINE : organization
+    PROCUREMENT_PURCHASEORDER ||--o{ PROCUREMENT_PURCHASEORDERLINE : purchase_order
+    PROCUREMENT_SUPPLIERPRODUCT ||--o{ PROCUREMENT_PURCHASEORDERLINE : supplier_product
+    CORE_ORGANIZATION ||--o{ PROCUREMENT_SUPPLIERPRODUCT : organization
+    PARTNERS_SUPPLIER ||--o{ PROCUREMENT_SUPPLIERPRODUCT : supplier
+    CATALOG_PRODUCTVARIANT ||--o{ PROCUREMENT_SUPPLIERPRODUCT : variant
+    CORE_ORGANIZATION ||--o{ SALES_SALESORDER : organization
+    PARTNERS_CUSTOMER ||--o{ SALES_SALESORDER : customer
+    CORE_CURRENCY ||--o{ SALES_SALESORDER : currency
+    CORE_ORGANIZATION ||--o{ SALES_SALESORDERLINE : organization
+    SALES_SALESORDER ||--o{ SALES_SALESORDERLINE : sales_order
+    CATALOG_PRODUCTVARIANT ||--o{ SALES_SALESORDERLINE : variant
+```

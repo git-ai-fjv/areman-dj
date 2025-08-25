@@ -1,0 +1,49 @@
+```mermaid
+erDiagram
+    %% Relation symbols legend
+    %% ||--o{  (one-to-many)  <= ForeignKey
+    %% ||--|| (one-to-one)  <= OneToOneField
+    %% }o--o{ (many-to-many)  <= ManyToManyField
+
+    PROCUREMENT_PURCHASEORDER {
+        BigAutoField id
+        CharField order_number
+        CharField status
+        DateField expected_date
+        TextField notes
+        BooleanField is_active
+        DateTimeField created_at
+        DateTimeField updated_at
+    }
+    PROCUREMENT_PURCHASEORDERLINE {
+        BigAutoField id
+        SmallIntegerField row_no
+        DecimalField qty
+        DecimalField price_at_order
+        TextField note
+        BooleanField is_active
+        DateTimeField created_at
+        DateTimeField updated_at
+    }
+    PROCUREMENT_SUPPLIERPRODUCT {
+        BigAutoField id
+        CharField supplier_sku
+        DecimalField pack_size
+        DecimalField min_order_qty
+        IntegerField lead_time_days
+        BooleanField is_active
+        CharField supplier_description
+        TextField notes
+        DateTimeField created_at
+        DateTimeField updated_at
+    }
+    CORE_ORGANIZATION ||--o{ PROCUREMENT_PURCHASEORDER : organization
+    PARTNERS_SUPPLIER ||--o{ PROCUREMENT_PURCHASEORDER : supplier
+    CORE_CURRENCY ||--o{ PROCUREMENT_PURCHASEORDER : currency
+    CORE_ORGANIZATION ||--o{ PROCUREMENT_PURCHASEORDERLINE : organization
+    PROCUREMENT_PURCHASEORDER ||--o{ PROCUREMENT_PURCHASEORDERLINE : purchase_order
+    PROCUREMENT_SUPPLIERPRODUCT ||--o{ PROCUREMENT_PURCHASEORDERLINE : supplier_product
+    CORE_ORGANIZATION ||--o{ PROCUREMENT_SUPPLIERPRODUCT : organization
+    PARTNERS_SUPPLIER ||--o{ PROCUREMENT_SUPPLIERPRODUCT : supplier
+    CATALOG_PRODUCTVARIANT ||--o{ PROCUREMENT_SUPPLIERPRODUCT : variant
+```

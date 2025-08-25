@@ -1,0 +1,34 @@
+```mermaid
+erDiagram
+    %% Relation symbols legend
+    %% ||--o{  (one-to-many)  <= ForeignKey
+    %% ||--|| (one-to-one)  <= OneToOneField
+    %% }o--o{ (many-to-many)  <= ManyToManyField
+
+    SALES_SALESORDER {
+        BigAutoField id
+        CharField order_number
+        CharField status
+        DateField expected_date
+        TextField notes
+        BooleanField is_active
+        DateTimeField created_at
+        DateTimeField updated_at
+    }
+    SALES_SALESORDERLINE {
+        BigAutoField id
+        SmallIntegerField row_no
+        DecimalField qty
+        DecimalField price_at_order
+        TextField note
+        BooleanField is_active
+        DateTimeField created_at
+        DateTimeField updated_at
+    }
+    CORE_ORGANIZATION ||--o{ SALES_SALESORDER : organization
+    PARTNERS_CUSTOMER ||--o{ SALES_SALESORDER : customer
+    CORE_CURRENCY ||--o{ SALES_SALESORDER : currency
+    CORE_ORGANIZATION ||--o{ SALES_SALESORDERLINE : organization
+    SALES_SALESORDER ||--o{ SALES_SALESORDERLINE : sales_order
+    CATALOG_PRODUCTVARIANT ||--o{ SALES_SALESORDERLINE : variant
+```

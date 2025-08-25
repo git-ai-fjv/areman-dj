@@ -1,0 +1,19 @@
+erDiagram
+    %% Relation symbols legend
+    %% ||--o{  (one-to-many)  <= ForeignKey
+    %% ||--|| (one-to-one)  <= OneToOneField
+    %% }o--o{ (many-to-many)  <= ManyToManyField
+
+    CORE_CURRENCY {
+        CharField code
+        CharField name
+        CharField symbol
+        SmallIntegerField decimal_places
+        BooleanField is_active
+        DateTimeField created_at
+        DateTimeField updated_at
+    }
+    CORE_ORGANIZATION {
+        SmallIntegerField org_code
+        CharField org_description
+    }

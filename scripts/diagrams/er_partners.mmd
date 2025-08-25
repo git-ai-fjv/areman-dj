@@ -1,0 +1,50 @@
+```mermaid
+erDiagram
+    %% Relation symbols legend
+    %% ||--o{  (one-to-many)  <= ForeignKey
+    %% ||--|| (one-to-one)  <= OneToOneField
+    %% }o--o{ (many-to-many)  <= ManyToManyField
+
+    PARTNERS_CUSTOMER {
+        BigAutoField id
+        CharField customer_code
+        BooleanField is_active
+        CharField customer_description
+        CharField contact_name
+        CharField email
+        CharField phone
+        CharField website
+        CharField tax_id
+        CharField address_line1
+        CharField address_line2
+        CharField postal_code
+        CharField city
+        CharField country_code
+        CharField payment_terms
+        DateTimeField created_at
+        DateTimeField updated_at
+    }
+    PARTNERS_SUPPLIER {
+        BigAutoField id
+        CharField supplier_code
+        BooleanField is_active
+        CharField supplier_description
+        CharField contact_name
+        CharField email
+        CharField phone
+        CharField website
+        CharField tax_id
+        CharField address_line1
+        CharField address_line2
+        CharField postal_code
+        CharField city
+        CharField country_code
+        CharField payment_terms
+        BooleanField is_preferred
+        SmallIntegerField lead_time_days
+        DateTimeField created_at
+        DateTimeField updated_at
+    }
+    CORE_ORGANIZATION ||--o{ PARTNERS_CUSTOMER : organization
+    CORE_ORGANIZATION ||--o{ PARTNERS_SUPPLIER : organization
+```

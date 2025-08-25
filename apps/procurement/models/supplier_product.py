@@ -42,6 +42,13 @@ class SupplierProduct(models.Model):
     lead_time_days = models.IntegerField(default=0, validators=[MinValueValidator(0)])
 
     is_active = models.BooleanField(default=True)
+
+    supplier_description = models.CharField(
+        max_length=200,
+        blank=True,
+        default="",
+        help_text="Optional supplier-specific description.",
+    )
     notes = models.TextField(null=True, blank=True)
 
     created_at = models.DateTimeField(db_default=Now(), editable=False)

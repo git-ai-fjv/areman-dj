@@ -1,7 +1,5 @@
-# apps/pricing/models/price.py
+# apps/pricing/models/sales_channel_variant_price.py
 # Created according to the user's Copilot Base Instructions.
-
-
 
 from __future__ import annotations
 
@@ -12,17 +10,16 @@ from django.db.models.functions import Now
 
 
 class SalesChannelVariantPrice(models.Model):
-    #id = models.BigAutoField(primary_key=True)
+    # id = models.BigAutoField(primary_key=True)
 
-    # Orga
+    # Organization
     organization = models.ForeignKey(
         "core.Organization",
         on_delete=models.PROTECT,
         related_name="sales_channel_variant_prices",
     )
 
-    # Beziehungen
-
+    # Relations
     price_list = models.ForeignKey(
         "pricing.PriceList",
         on_delete=models.PROTECT,
@@ -34,9 +31,10 @@ class SalesChannelVariantPrice(models.Model):
         on_delete=models.PROTECT,
         related_name="sales_channel_variant_prices",
     )
+
     valid_from = models.DateTimeField()
 
-    # Werte/Zeitfenster
+    # Values / timeframe
     price = models.DecimalField(
         max_digits=12,
         decimal_places=4,
@@ -46,23 +44,26 @@ class SalesChannelVariantPrice(models.Model):
     valid_to = models.DateTimeField(null=True, blank=True)
     need_update = models.BooleanField(default=False)  # Flag to indicate if the price needs to be updated
 
-    # DB-Defaults (Postgres setzt Timestamps)
+    # DB defaults (Postgres sets timestamps)
     created_at = models.DateTimeField(db_default=Now(), editable=False)
     updated_at = models.DateTimeField(db_default=Now(), editable=False)
 
     def __str__(self) -> str:
-        return f"[org={self.organization}] {self.price_list}/{self.channel_variant} @ {self.amount} from {self.valid_from}"
+        return (
+            f"[org={self.organization}] {self.price_list}/{self.channel_variant} "
+            f"@ {self.price} from {self.valid_from}"
+        )
 
     class Meta:
         # db_table = "price"
         # indexes = [
         #     models.Index(fields=("organization",), name="idx_price_org"),
-        #     models.Index(fields=("price_list", "variant"), name="idx_price_pricelist_variant"),
-        #     models.Index(fields=("variant", "price_list"), name="idx_price_variant_pricelist"),
+        #     models.Index(fields=("price_list", "channel_variant"), name="idx_price_pricelist_variant"),
+        #     models.Index(fields=("channel_variant", "price_list"), name="idx_price_variant_pricelist"),
         #     models.Index(fields=("valid_from",), name="idx_price_valid_from"),
         #     # Partial index (current price): valid_to IS NULL
         #     models.Index(
-        #         fields=("price_list", "variant"),
+        #         fields=("price_list", "channel_variant"),
         #         name="idx_price_current",
         #         condition=Q(valid_to__isnull=True),
         #     ),
@@ -70,7 +71,7 @@ class SalesChannelVariantPrice(models.Model):
         constraints = [
             models.UniqueConstraint(
                 fields=("organization", "price_list", "channel_variant", "valid_from"),
-                name="uniq_chanel_var_price_valid",
+                name="uniq_channel_var_price_valid",
             ),
             models.CheckConstraint(
                 check=Q(price__gte=0),
