@@ -19,9 +19,9 @@ logger = logging.getLogger(__name__)
 def parse_items(raw: str) -> List[Tuple[int, str, str]]:
     """Parse a string like '1:GRP01:Hardware,1::No group' into triplets.
 
-    Format per item: 'org_code:item_group_code[:description]'
+    Format per item: 'org_code:product_group_code[:description]'
       - org_code: integer (SMALLINT)
-      - item_group_code: may be empty (''), max length 20
+      - product_group_code: may be empty (''), max length 20
       - description: optional, will be trimmed to 200 chars
     Items are comma-separated.
     """
@@ -43,10 +43,9 @@ def parse_items(raw: str) -> List[Tuple[int, str, str]]:
 
         if not org_str:
             raise ValueError(f"Missing org_code in '{part}'")
-        # Allow empty code (''); only enforce max length
         if len(code) > 20:
             raise ValueError(
-                f"item_group_code too long ({len(code)}). Max is 20: '{code}'"
+                f"product_group_code too long ({len(code)}). Max is 20: '{code}'"
             )
 
         org_code = int(org_str)
@@ -55,13 +54,13 @@ def parse_items(raw: str) -> List[Tuple[int, str, str]]:
 
 
 class Command(BaseCommand):
-    """Upsert ProductGroup rows by (organization, item_group_code)."""
+    """Upsert ProductGroup rows by (organization, product_group_code)."""
 
     help = (
         "Upsert product groups. Usage:\n"
         '  --items "1:GRP01:Hardware,1::No group" [--dry-run]\n'
-        "Each item is 'org_code:item_group_code[:description]'. "
-        "item_group_code may be empty ('')."
+        "Each item is 'org_code:product_group_code[:description]'. "
+        "product_group_code may be empty ('')."
     )
 
     def add_arguments(self, parser) -> None:
@@ -95,12 +94,11 @@ class Command(BaseCommand):
             for org_code, code, desc in items:
                 if dry_run:
                     self.stdout.write(
-                        f"[DRY] would upsert org={org_code}, item_group='{code}', "
+                        f"[DRY] would upsert org={org_code}, product_group='{code}', "
                         f"description='{desc}'"
                     )
                     continue
 
-                # Ensure the organization exists (FK to core.Organization.org_code)
                 try:
                     org = Organization.objects.get(org_code=org_code)
                 except Organization.DoesNotExist:
@@ -110,18 +108,18 @@ class Command(BaseCommand):
 
                 obj, was_created = ProductGroup.objects.update_or_create(
                     organization=org,
-                    item_group_code=code,
-                    defaults={"item_group_description": desc},
+                    product_group_code=code,
+                    defaults={"product_group_description": desc},
                 )
                 if was_created:
                     created += 1
                     self.stdout.write(
-                        f"Created product_group {obj.item_group_code} (org={org_code})"
+                        f"Created product_group {obj.product_group_code} (org={org_code})"
                     )
                 else:
                     updated += 1
                     self.stdout.write(
-                        f"Updated product_group {obj.item_group_code} (org={org_code})"
+                        f"Updated product_group {obj.product_group_code} (org={org_code})"
                     )
 
             if dry_run:
@@ -134,5 +132,6 @@ class Command(BaseCommand):
         except Exception as e:
             tb = traceback.format_exc()
             logger.warning(f"Seed product groups failed: {e}")
-            # Always include traceback in the error message as per project rules
             raise CommandError(f"Error seeding product groups: {e}\n{tb}")
+
+

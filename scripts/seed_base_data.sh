@@ -13,6 +13,11 @@ if [ -f ".venv/bin/activate" ]; then
   source .venv/bin/activate
 fi
 
+
+
+### mandant:
+echo "****************** Seed Mandant  ********************************"
+python manage.py seed_organization --items "1:Areman"
 # Call Django management command (works from repo root)
 echo "****************** Seed Manufacturer  ********************************"
 python manage.py seed_manufacturers --items "1:indefinite,2:Komatsu"
@@ -25,8 +30,16 @@ python manage.py seed_currency --items "EUR:Euro:€:2,USD:US Dollar:$:2,GBP:Pou
 echo "****************** Seed price groups  ********************************"
 python manage.py seed_price_group --items "1::no price Group,1:1:price group 1,1:2:price group 2"
 echo "****************** Seed product groups  ********************************"
-python manage.py seed_product_group --items "1::no item group,1:1:item group 1,1:2:item group 2"
+python manage.py seed_product_group --items "1::no product group,1:1:product group 1,1:2:product group 2"
 echo "****************** Seed state  ********************************"
 python manage.py seed_state --items "N:new,U:used,R:reman"
 
+echo "****************** source_types  ********************************"
+python manage.py seed_import_source_types
+
+echo "****************** Create superuser ********************************"
+DJANGO_SUPERUSER_USERNAME=fjv \
+DJANGO_SUPERUSER_EMAIL=admin@example.com \
+DJANGO_SUPERUSER_PASSWORD=1 \
+python manage.py createsuperuser --noinput || true
 

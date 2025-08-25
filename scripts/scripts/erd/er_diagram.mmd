@@ -229,17 +229,22 @@ erDiagram
     IMPORTS_IMPORTRAWRECORD {
         BigAutoField id
         IntegerField line_number
-        CharField external_id
         JSONField payload
-        DateTimeField fetched_at
     }
     IMPORTS_IMPORTRUN {
         BigAutoField id
+        CharField source_file
         DateTimeField started_at
         DateTimeField finished_at
         CharField status
         IntegerField total_records
+        BooleanField is_processed
         DateTimeField processed_at
+    }
+    IMPORTS_IMPORTSOURCETYPE {
+        BigAutoField id
+        CharField code
+        CharField description
     }
     CORE_ORGANIZATION ||--o{ CATALOG_CHANNEL : organization
     CORE_CURRENCY ||--o{ CATALOG_CHANNEL : base_currency
@@ -285,5 +290,5 @@ erDiagram
     SALES_SALESORDER ||--o{ SALES_SALESORDERLINE : sales_order
     CATALOG_PRODUCTVARIANT ||--o{ SALES_SALESORDERLINE : variant
     IMPORTS_IMPORTRUN ||--o{ IMPORTS_IMPORTRAWRECORD : import_run
-    PARTNERS_SUPPLIER ||--o{ IMPORTS_IMPORTRAWRECORD : supplier
     PARTNERS_SUPPLIER ||--o{ IMPORTS_IMPORTRUN : supplier
+    IMPORTS_IMPORTSOURCETYPE ||--o{ IMPORTS_IMPORTRUN : source_type
