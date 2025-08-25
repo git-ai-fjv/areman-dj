@@ -103,7 +103,7 @@ def write_file(path: Path, code: str):
 
 
 if __name__ == "__main__":
-    parser = argparse.ArgumentParser(description="Generate Mermaid ER diagrams from Django models.")
+    parser = argparse.ArgumentParser(description="Generate Mermaid ER erd from Django models.")
     parser.add_argument(
         "--per-app",
         action="store_true",
@@ -140,4 +140,4 @@ if __name__ == "__main__":
 # ./scripts/gen_mermaid_er.py --per-app
 #
 # anderes Ziel:
-# ./scripts/gen_mermaid_er.py --per-app --outdir diagrams
+# ./scripts/gen_mermaid_er.py --per-app --outdir erd

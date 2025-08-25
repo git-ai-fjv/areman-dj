@@ -1,0 +1,27 @@
+# Dockerfile.mermaid
+FROM node:20-slim
+
+RUN apt-get update && apt-get install -y \
+    libnss3 \
+    libatk1.0-0 \
+    libatk-bridge2.0-0 \
+    libcups2 \
+    libdrm2 \
+    libxkbcommon0 \
+    libxdamage1 \
+    libxcomposite1 \
+    libxrandr2 \
+    libgbm1 \
+    libasound2 \
+    libxshmfence1 \
+    libxfixes3 \
+    fonts-freefont-ttf \
+    && rm -rf /var/lib/apt/lists/*
+
+RUN npm install -g @mermaid-js/mermaid-cli
+
+WORKDIR /app
+
+# WICHTIG: Chromium-Flags mitgeben
+ENTRYPOINT ["mmdc", "--puppeteerConfigFile", "/app/puppeteer.json"]
+

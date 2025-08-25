@@ -111,7 +111,6 @@ if __name__ == "__main__":
 
     ############# create test supplier:
 
-
     sup_payload = {
         "org_code": org_code,
         "supplier_code": "10001",

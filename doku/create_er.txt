@@ -1,0 +1,7 @@
+
+### bild docker:
+docker build -t mermaid-cli -f Dockerfile.mermai
+
+### use it:
+ docker run --rm -v $(pwd)/scripts/erd:/app mermaid-cli -i er_core.mmd -o er_core.svg
+

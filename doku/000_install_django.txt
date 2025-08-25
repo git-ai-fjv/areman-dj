@@ -122,17 +122,18 @@ cp apps/core/admin/__init__.py apps/ingestion/admin/
 python manage.py check
 
 
-mkdir -p apps/inventory
-python manage.py startapp inventory apps/inventory
-mkdir -p apps/inventory/management/commands
-mkdir -p apps/inventory/models
-mkdir -p apps/inventory/admin
-mkdir -p apps/inventory/services
-mkdir -p apps/inventory/readers
-rm -f apps/inventory/models.py
-rm -f apps/inventory/admin.py
-cp apps/core/models/__init__.py apps/inventory/models/
-cp apps/core/admin/__init__.py apps/inventory/admin/
+mkdir -p apps/imports
+python manage.py startapp imports apps/imports
+mkdir -p apps/imports/management/commands
+mkdir -p apps/imports/models
+mkdir -p apps/imports/admin
+mkdir -p apps/imports/services
+mkdir -p apps/imports/pipelines
+mkdir -p apps/imports/readers
+rm -f apps/imports/models.py
+rm -f apps/imports/admin.py
+cp apps/core/models/__init__.py apps/imports/models/
+cp apps/core/admin/__init__.py apps/imports/admin/
 python manage.py check
 
 #############################################################
