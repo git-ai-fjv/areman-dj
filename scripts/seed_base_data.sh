@@ -37,6 +37,9 @@ python manage.py seed_state --items "N:new,U:used,R:reman"
 echo "****************** source_types  ********************************"
 python manage.py seed_import_source_types
 
+echo "****************** default dummy ********************************"
+python manage.py seed_suppliers --items "1:SUPP01:Default dummy Supplier for tests:0"
+
 echo "****************** Create superuser ********************************"
 DJANGO_SUPERUSER_USERNAME=fjv \
 DJANGO_SUPERUSER_EMAIL=admin@example.com \

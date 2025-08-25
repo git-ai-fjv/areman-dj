@@ -5,13 +5,17 @@
 CYAN  := \033[36m
 BLUE  := \033[34m
 RED   := \033[31m
+GREEN := \033[32m
 BOLD  := \033[1m
 RESET := \033[0m
+
+DOCS_DIR := docs
+DOCS_FILE := $(DOCS_DIR)/MAKE_CMDS.md
 
 # =============================================================================
 # Help
 # =============================================================================
-help:  ## Show this help (grouped by section)
+help: gen-docs  ## Show this help (and regenerate docs/MAKE_CMDS.md)
 	@echo ""
 	@echo "$(BOLD)Most common targets:$(RESET)"
 	@echo "  $(BLUE)migrate$(RESET)            Apply database migrations"
@@ -46,6 +50,56 @@ help:  ## Show this help (grouped by section)
 	@echo "  $(CYAN)shell$(RESET)              Open Django shell"
 	@echo "  $(CYAN)superuser$(RESET)          Create a Django superuser interactively"
 	@echo "  $(CYAN)check$(RESET)              Run Django system checks"
+	@echo ""
+	@echo "📄 Updated documentation: $(DOCS_FILE)"
+
+# =============================================================================
+# Docs
+# =============================================================================
+gen-docs:
+	@mkdir -p $(DOCS_DIR)
+	@echo "## 🚀 Makefile Cheatsheet" > $(DOCS_FILE)
+	@echo "" >> $(DOCS_FILE)
+	@echo "Mit \`make\` oder \`make help\` bekommst du dieses Menü im Terminal." >> $(DOCS_FILE)
+	@echo "" >> $(DOCS_FILE)
+
+	@echo "### 🔵 Daily Business" >> $(DOCS_FILE)
+	@echo "\`\`\`bash" >> $(DOCS_FILE)
+	@echo "make migrate          # Apply database migrations" >> $(DOCS_FILE)
+	@echo "make makemigrations   # Create new migrations based on models" >> $(DOCS_FILE)
+	@echo "make run              # Start Django development server" >> $(DOCS_FILE)
+	@echo "\`\`\`" >> $(DOCS_FILE)
+	@echo "" >> $(DOCS_FILE)
+
+	@echo "### 🟦 Hilfreiche Tools" >> $(DOCS_FILE)
+	@echo "\`\`\`bash" >> $(DOCS_FILE)
+	@echo "make lint             # Run flake8 checks" >> $(DOCS_FILE)
+	@echo "make format           # Auto-format code (black)" >> $(DOCS_FILE)
+	@echo "make isort            # Sort imports" >> $(DOCS_FILE)
+	@echo "\`\`\`" >> $(DOCS_FILE)
+	@echo "" >> $(DOCS_FILE)
+
+	@echo "### 🌱 Stammdaten-Seeds" >> $(DOCS_FILE)
+	@echo "\`\`\`bash" >> $(DOCS_FILE)
+	@echo "make seed             # Run base-data seeding script" >> $(DOCS_FILE)
+	@echo "\`\`\`" >> $(DOCS_FILE)
+	@echo "" >> $(DOCS_FILE)
+
+	@echo "### 🔴 Gefährlich – Datenverlust!" >> $(DOCS_FILE)
+	@echo "\`\`\`bash" >> $(DOCS_FILE)
+	@echo "make deletedb         # ⚠ DROP database (DATA LOSS!)" >> $(DOCS_FILE)
+	@echo "make resetdb          # ⚠ RESET database (ALL data will be lost!)" >> $(DOCS_FILE)
+	@echo "\`\`\`" >> $(DOCS_FILE)
+	@echo "" >> $(DOCS_FILE)
+
+	@echo "### 🛠️ Sonstiges" >> $(DOCS_FILE)
+	@echo "\`\`\`bash" >> $(DOCS_FILE)
+	@echo "make reset-app APP=myapp   # Reset migrations for a single app" >> $(DOCS_FILE)
+	@echo "make clear-migrations      # Delete ALL migration files (DANGEROUS!)" >> $(DOCS_FILE)
+	@echo "make shell                 # Open Django shell" >> $(DOCS_FILE)
+	@echo "make superuser             # Create superuser interactively" >> $(DOCS_FILE)
+	@echo "make check                 # Django system checks" >> $(DOCS_FILE)
+	@echo "\`\`\`" >> $(DOCS_FILE)
 	@echo ""
 
 # =============================================================================
@@ -112,7 +166,16 @@ resetdb:  ## Reset database (drop, create, migrate, seed)
 	$(MAKE) createdb
 	$(MAKE) migrate
 	$(MAKE) seed
-	@echo "Database reset complete."
+	@echo ""
+	@echo "─────────────────────────────"
+	@echo "$(BOLD) Database reset complete ✅$(RESET)"
+	@echo "─────────────────────────────"
+	@echo "$(GREEN)✔ Database created$(RESET)"
+	@echo "$(GREEN)✔ Migrations applied$(RESET)"
+	@echo "$(GREEN)✔ Base data seeded$(RESET)"
+	@echo "$(GREEN)✔ Default supplier created$(RESET)"
+	@echo "$(GREEN)✔ Superuser ready (fjv)$(RESET)"
+	@echo "─────────────────────────────"
 
 # =============================================================================
 # Django management
