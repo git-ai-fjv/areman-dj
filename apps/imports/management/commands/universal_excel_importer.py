@@ -92,6 +92,16 @@ By default, the command looks in:
                 cleaned[k] = v
         return cleaned
 
+    def _is_effectively_empty(self, row_dict: dict) -> bool:
+        """Return True if a row is effectively empty (only NaN/None/""/0.0)."""
+        for v in row_dict.values():
+            if v is None or v == "" or (isinstance(v, float) and math.isnan(v)):
+                continue
+            if isinstance(v, (int, float)) and v == 0:
+                continue
+            return False
+        return True
+
     # ------------------------------------------------------------------ #
     # Main
     # ------------------------------------------------------------------ #
@@ -147,6 +157,8 @@ By default, the command looks in:
                 self.stdout.write(self.style.WARNING("[DRY-RUN] Preview only."))
                 for i, row in df.head(20).iterrows():
                     row_dict = self._clean_row_dict(row.to_dict())
+                    if self._is_effectively_empty(row_dict):
+                        continue
                     self.stdout.write(f"Line {i+1}: {row_dict}")
                 self.stdout.write(
                     self.style.SUCCESS(
@@ -171,8 +183,10 @@ By default, the command looks in:
 
             for i, row in df.iterrows():
                 row_dict = self._clean_row_dict(row.to_dict())
-                if not any(v not in (None, "", float("nan")) for v in row_dict.values()):
-                    continue  # skip completely empty rows
+
+                # Skip empty or pseudo-empty rows
+                if self._is_effectively_empty(row_dict):
+                    continue
 
                 buffer.append(
                     ImportRawRecord(
@@ -223,15 +237,16 @@ By default, the command looks in:
 # Spezifische Datei importieren:
 #   python manage.py universal_excel_importer --supplier SUPP01 --file apps/imports/data/SUPP01/2025/08/test.xlsx
 #
-# Beispielausgabe mit Zeitmessung:
+# Beispielausgabe mit Zeitmessung und Filter:
 #   Using file: apps/imports/data/SUPP01/2025/08/test.xlsx
-#   Found 12345 rows in Excel.
-#   [Timing] Loaded Supplier: 0.01s
+#   Found 1048575 rows in Excel.
+#   [Timing] Loaded Supplier: 0.00s
 #   [Timing] Loaded ImportSourceType: 0.00s
 #   [Timing] Resolved file path: 0.00s
-#   [Timing] Read Excel file: 2.13s
-#   [Timing] Created ImportRun: 0.02s
-#   [Timing] Inserted 12345 records: 4.78s
-#   [Timing] Finalized ImportRun: 0.01s
-#   ImportRun 42 complete — 12345 rows imported.
+#   [Timing] Read Excel file: 46.51s
+#   [Timing] Created ImportRun: 0.00s
+#   [Timing] Inserted 20 records: 0.03s
+#   [Timing] Finalized ImportRun: 0.00s
+#   ImportRun 3 complete — 20 rows imported.
+
 
