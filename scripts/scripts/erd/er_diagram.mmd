@@ -226,6 +226,26 @@ erDiagram
         DateTimeField created_at
         DateTimeField updated_at
     }
+    IMPORTS_IMPORTERRORLOG {
+        BigAutoField id
+        IntegerField line_number
+        TextField error_message
+        JSONField payload
+        DateTimeField created_at
+    }
+    IMPORTS_IMPORTGLOBALDEFAULTSET {
+        BigAutoField id
+        CharField description
+        DateField valid_from
+        DateTimeField created_at
+    }
+    IMPORTS_IMPORTGLOBALDEFAULTLINE {
+        BigAutoField id
+        CharField target_path
+        JSONField default_value
+        CharField transform
+        BooleanField is_required
+    }
     IMPORTS_IMPORTRAWRECORD {
         BigAutoField id
         IntegerField line_number
@@ -289,6 +309,9 @@ erDiagram
     CORE_ORGANIZATION ||--o{ SALES_SALESORDERLINE : organization
     SALES_SALESORDER ||--o{ SALES_SALESORDERLINE : sales_order
     CATALOG_PRODUCTVARIANT ||--o{ SALES_SALESORDERLINE : variant
+    IMPORTS_IMPORTRUN ||--o{ IMPORTS_IMPORTERRORLOG : import_run
+    CORE_ORGANIZATION ||--o{ IMPORTS_IMPORTGLOBALDEFAULTSET : organization
+    IMPORTS_IMPORTGLOBALDEFAULTSET ||--o{ IMPORTS_IMPORTGLOBALDEFAULTLINE : set
     IMPORTS_IMPORTRUN ||--o{ IMPORTS_IMPORTRAWRECORD : import_run
     PARTNERS_SUPPLIER ||--o{ IMPORTS_IMPORTRUN : supplier
     IMPORTS_IMPORTSOURCETYPE ||--o{ IMPORTS_IMPORTRUN : source_type
