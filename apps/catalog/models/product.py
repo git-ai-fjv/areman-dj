@@ -72,11 +72,19 @@ class Product(models.Model):
         on_delete=models.PROTECT,
     )
 
+    description = models.TextField(
+        null=True,
+        blank=True,
+        help_text="Full product description as provided by supplier/API.",
+    )
+
     is_active = models.BooleanField(default=True)
 
     # DB-defaults: Postgres setzt NOW(); Django lässt Spalten leer beim INSERT
     created_at = models.DateTimeField(db_default=Now(), editable=False)
     updated_at = models.DateTimeField(db_default=Now(), editable=False)
+
+
 
     def __str__(self) -> str:
         return f"[{self.organization} {self.name} ({self.slug})"

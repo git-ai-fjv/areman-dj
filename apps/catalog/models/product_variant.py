@@ -44,7 +44,20 @@ class ProductVariant(models.Model):
 
     # Identity & scanning
     sku = models.CharField(max_length=120)
-    barcode = models.CharField(max_length=64, blank=True, null=True)
+
+    ean = models.CharField(
+        max_length=14,  # GTIN-14 maximal
+        null=True,
+        blank=True,
+        help_text="Standardized GTIN/EAN code (8, 12, 13, or 14 digits).",
+    )
+
+    barcode = models.CharField(
+        max_length=64,
+        null=True,
+        blank=True,
+        help_text="Non-standard or supplier-specific barcode (may be alphanumeric).",
+    )
 
     # Extended attributes (from legacy `items`)
     #packing_code = models.SmallIntegerField(default=2)      # composite FK to packing in SQL migration
@@ -58,6 +71,13 @@ class ProductVariant(models.Model):
     # DB fills timestamps via DEFAULT NOW()
     created_at = models.DateTimeField(db_default=Now(), editable=False)
     updated_at = models.DateTimeField(db_default=Now(), editable=False)
+
+    eclass_code = models.CharField(
+        max_length=16,
+        null=True,
+        blank=True,
+        help_text="International eCl@ss classification code (e.g. 44070702).",
+    )
 
     def __str__(self) -> str:
         return f"[org={self.organization}] SKU={self.sku} (product_id={self.product_id})"
