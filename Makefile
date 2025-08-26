@@ -164,6 +164,8 @@ createdb:  ## Create the database (Postgres/SQLite)
 resetdb:  ## Reset database (drop, create, migrate, seed)
 	$(MAKE) deletedb
 	$(MAKE) createdb
+	$(MAKE) clear-migrations
+	$(MAKE) makemigrations
 	$(MAKE) migrate
 	$(MAKE) seed
 	@echo ""
@@ -171,7 +173,8 @@ resetdb:  ## Reset database (drop, create, migrate, seed)
 	@echo "$(BOLD) Database reset complete ✅$(RESET)"
 	@echo "─────────────────────────────"
 	@echo "$(GREEN)✔ Database created$(RESET)"
-	@echo "$(GREEN)✔ Migrations applied$(RESET)"
+	@echo "$(GREEN)✔ Migrations deleted$(RESET)"
+	@echo "$(GREEN)✔ new Migrations applied$(RESET)"
 	@echo "$(GREEN)✔ Base data seeded$(RESET)"
 	@echo "$(GREEN)✔ Default supplier created$(RESET)"
 	@echo "$(GREEN)✔ Superuser ready (fjv)$(RESET)"

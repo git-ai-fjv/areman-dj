@@ -10,6 +10,11 @@ class ImportGlobalDefaultSet(models.Model):
     Head table for global defaults that apply to all suppliers.
     Each set has a validity period and a description.
     """
+    organization = models.ForeignKey(
+        "core.Organization",
+        on_delete=models.PROTECT,
+        related_name="global_default_sets",
+    )
 
     description = models.CharField(max_length=255)
     valid_from = models.DateField()
@@ -21,4 +26,3 @@ class ImportGlobalDefaultSet(models.Model):
 
     def __str__(self) -> str:
         return f"{self.description} (from {self.valid_from})"
-

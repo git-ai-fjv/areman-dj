@@ -15,7 +15,7 @@ class ImportGlobalDefaultLine(models.Model):
     set = models.ForeignKey(
         ImportGlobalDefaultSet,
         on_delete=models.CASCADE,
-        related_name="glocal_default_lines",
+        related_name="global_default_lines",
     )
 
     target_path = models.CharField(max_length=255)
@@ -26,6 +26,12 @@ class ImportGlobalDefaultLine(models.Model):
     class Meta:
         verbose_name = "Import Global Default Line"
         verbose_name_plural = "Import Global Default Lines"
+        constraints = [
+            models.UniqueConstraint(
+                fields=["set", "target_path"],
+                name="uq_globaldefaultline_set_target"
+            )
+        ]
 
     def __str__(self) -> str:
         return f"{self.target_path} = {self.default_value}"
