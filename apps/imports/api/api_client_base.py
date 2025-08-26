@@ -30,7 +30,8 @@ class BaseApiClient:
             headers["sw-context-token"] = context_token
         return headers
 
-    def _post(self, path: str, payload: Dict[str, Any], context_token: Optional[str] = None) -> Dict[str, Any]:
+    def _post(self, path: str, payload: Dict[str, Any], context_token: Optional[str] = None) -> requests.Response:
+        """Execute a POST request and return the full Response object."""
         url = f"{self.base_url}/{path.lstrip('/')}"
         try:
             resp = self.session.post(
@@ -38,8 +39,9 @@ class BaseApiClient:
             )
             if resp.status_code >= 400:
                 raise ApiError(f"POST {url} failed [{resp.status_code}]: {resp.text}")
-            return resp.json()
+            return resp  # 🔑 Response zurückgeben, nicht .json()
         except Exception as e:
             tb = traceback.format_exc()
             self.log.error("API POST failed: %s\n%s", e, tb)
             raise
+

@@ -4,8 +4,8 @@ import uuid
 import logging
 from typing import Any, Dict, List
 
-#from .api_client_base import BaseApiClient, ApiError
 from apps.imports.api.api_client_base import BaseApiClient, ApiError
+
 
 class FilterTechnikApiClient(BaseApiClient):
     """Client for Filter-Technik Store API (Shopware 6.6)."""
@@ -20,7 +20,7 @@ class FilterTechnikApiClient(BaseApiClient):
 
     def login(self) -> None:
         """Authenticate and refresh context token."""
-        path = "store-api/account/login"
+        path = "account/login"
         payload = {"username": self.username, "password": self.password}
         resp = self._post(path, payload, context_token=self.context_token)
 
@@ -32,7 +32,7 @@ class FilterTechnikApiClient(BaseApiClient):
 
     def get_product_by_manufacturer_number(self, number: str) -> List[Dict[str, Any]]:
         """Fetch products by manufacturerNumber."""
-        path = "store-api/product"
+        path = "product"
         payload = {
             "page": "1",
             "filter": [{"type": "equals", "field": "manufacturerNumber", "value": number}],
@@ -42,7 +42,7 @@ class FilterTechnikApiClient(BaseApiClient):
 
     def get_product_by_sku(self, sku: str) -> List[Dict[str, Any]]:
         """Fetch products by productNumber (SKU)."""
-        path = "store-api/product"
+        path = "product"
         payload = {
             "page": "1",
             "filter": [{"type": "equals", "field": "productNumber", "value": sku}],
@@ -51,10 +51,7 @@ class FilterTechnikApiClient(BaseApiClient):
         return resp.json().get("elements", [])
 
 
-if __name__ == "__main__" and __package__ is None:
-    import sys, pathlib
-    sys.path.append(str(pathlib.Path(__file__).resolve().parents[2]))
-
+if __name__ == "__main__":
     logging.basicConfig(level=logging.INFO)
 
     BASE_URL = "https://www.filter-technik.de/store-api"
@@ -75,3 +72,5 @@ if __name__ == "__main__" and __package__ is None:
         print("Fetched products:", products)
     except Exception as e:
         print("❌ Error during API test:", e)
+
+
