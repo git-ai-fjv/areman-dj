@@ -5,6 +5,8 @@ import logging
 from typing import Any, Dict, List
 
 from apps.imports.api.api_client_base import BaseApiClient, ApiError
+import json
+
 
 
 class FilterTechnikApiClient(BaseApiClient):
@@ -14,7 +16,6 @@ class FilterTechnikApiClient(BaseApiClient):
         super().__init__(base_url, access_key)
         self.username = username
         self.password = password
-        # Context token required for all requests
         self.context_token = str(uuid.uuid4()).replace("-", "")
         self.log = logging.getLogger(self.__class__.__name__)
 
@@ -50,6 +51,31 @@ class FilterTechnikApiClient(BaseApiClient):
         resp = self._post(path, payload, context_token=self.context_token)
         return resp.json().get("elements", [])
 
+    def fetch_all_products(self, start_page: int = 1, limit: int = 100) -> List[Dict[str, Any]]:
+        """Fetch all products with pagination starting from start_page."""
+        path = "product"
+        all_products: List[Dict[str, Any]] = []
+        page = start_page
+
+        while True:
+            payload = {"page": page, "limit": limit}
+            resp = self._post(path, payload, context_token=self.context_token)
+            data = resp.json()
+            elements = data.get("elements", [])
+            total = data.get("total", 0)
+
+            if not elements:
+                break
+
+            all_products.extend(elements)
+            self.log.info("Fetched page %s: %s products (total: %s)", page, len(elements), total)
+
+            if page * limit >= total:
+                break
+
+            page += 1
+
+        return all_products
 
 if __name__ == "__main__":
     logging.basicConfig(level=logging.INFO)
@@ -59,18 +85,15 @@ if __name__ == "__main__":
     USERNAME = "bestellung@areman.de"
     PASSWORD = "1c6a4c1b"
 
-    client = FilterTechnikApiClient(
-        base_url=BASE_URL,
-        access_key=API_KEY,
-        username=USERNAME,
-        password=PASSWORD,
-    )
+    client = FilterTechnikApiClient(BASE_URL, API_KEY, USERNAME, PASSWORD)
 
     try:
         client.login()
-        products = client.get_product_by_manufacturer_number("W 930/13")
-        print("Fetched products:", products)
+        products = client.fetch_all_products(start_page=1000, limit=50)
+        print(f"Total fetched: {len(products)} products")
+
+        for p in products[:5]:
+            print(json.dumps(p, indent=2, ensure_ascii=False))
+            print(p["productNumber"], "-", p["translated"].get("name"))
     except Exception as e:
         print("❌ Error during API test:", e)
-
-
