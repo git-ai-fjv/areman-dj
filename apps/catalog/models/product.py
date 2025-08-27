@@ -1,12 +1,10 @@
-# Created according to the user's Copilot Base Instructions.
+# apps/catalog/models/product.py
+# Created according to the user's permanent Copilot Base Instructions.
 from __future__ import annotations
 
 from django.db import models
 from django.db.models import F, Value, Func
 from django.db.models.functions import Lower, Now
-
-### restart id: nach loeschen aller rows
-## alter sequence catalog_product_id_seq RESTART WITH 1;
 
 
 class RegexpReplace(Func):
@@ -17,12 +15,10 @@ class RegexpReplace(Func):
 
 class Product(models.Model):
     """
-    Mirrors the SQL table `product` (BIGINT id, MPN normalization, item group).
+    Product master data (shared across variants).
+    Mirrors supplier API fields plus ERP/Shop attributes.
     """
 
-    #id = models.BigAutoField(primary_key=True)
-
-    # org_code SMALLINT → FK to core.Organization(org_code)
     organization = models.ForeignKey(
         "core.Organization",
         on_delete=models.PROTECT,
@@ -32,7 +28,6 @@ class Product(models.Model):
     name = models.CharField(max_length=200)
     slug = models.CharField(max_length=200)
 
-    # manufacturer_code SMALLINT → FK to catalog.Manufacturer(manufacturer_code)
     manufacturer = models.ForeignKey(
         "catalog.Manufacturer",
         on_delete=models.PROTECT,
@@ -41,7 +36,6 @@ class Product(models.Model):
 
     manufacturer_part_number = models.CharField(max_length=100)
 
-    # Normalized MPN: lower + de-umlauts + strip non [0-9a-z]
     manufacturer_part_number_norm = models.GeneratedField(
         expression=RegexpReplace(
             RegexpReplace(
@@ -66,7 +60,6 @@ class Product(models.Model):
         editable=False,
     )
 
-    # ✅ Echte ORM-Referenz auf Artikelgruppe
     product_group = models.ForeignKey(
         "catalog.ProductGroup",
         on_delete=models.PROTECT,
@@ -75,41 +68,41 @@ class Product(models.Model):
     description = models.TextField(
         null=True,
         blank=True,
-        help_text="Full product description as provided by supplier/API.",
+        help_text="Full product description (rich text / HTML).",
     )
+
+    # SEO / Marketing
+    meta_title = models.CharField(max_length=255, null=True, blank=True)
+    meta_description = models.TextField(null=True, blank=True)
+    keywords = models.CharField(max_length=500, null=True, blank=True)
+
+    # Shop flags
+    is_new = models.BooleanField(default=False)
+    is_closeout = models.BooleanField(default=False)
+    release_date = models.DateField(null=True, blank=True)
 
     is_active = models.BooleanField(default=True)
 
-    # DB-defaults: Postgres setzt NOW(); Django lässt Spalten leer beim INSERT
     created_at = models.DateTimeField(db_default=Now(), editable=False)
     updated_at = models.DateTimeField(db_default=Now(), editable=False)
 
-
-
     def __str__(self) -> str:
-        return f"[{self.organization} {self.name} ({self.slug})"
+        return f"[{self.organization}] {self.name} ({self.slug})"
 
     class Meta:
-#        db_table = "product"
-#         indexes = [
-#             models.Index(fields=("organization",), name="idx_product_org"),
-#             models.Index(fields=("is_active",), name="idx_product_active"),
-#             models.Index(fields=("manufacturer",), name="idx_product_manufacturer"),
-#         ]
-         constraints = [
-            # (org_code, slug) unique
+        constraints = [
             models.UniqueConstraint(
                 fields=("organization", "slug"),
                 name="uniq_product_org_slug",
             ),
-            # (org_code, manufacturer_code, manufacturer_part_number_norm) unique
             models.UniqueConstraint(
                 fields=("organization", "manufacturer", "manufacturer_part_number_norm"),
                 name="uniq_product_org_manu_mpn_norm",
             ),
-            # Guard für Varianten: (org_code, id)
             models.UniqueConstraint(
                 fields=("organization", "id"),
                 name="uniq_product_org_id",
             ),
         ]
+
+

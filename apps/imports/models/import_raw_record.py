@@ -34,29 +34,59 @@ class ImportRawRecord(models.Model):
         help_text="Supplier's article reference (e.g., supplier SKU or manufacturer number) for fast lookup.",
     )
 
-    is_imported = models.BooleanField(
+    product_is_imported = models.BooleanField(
         default=False,
         help_text="True if this record has been successfully imported into ERP tables.",
     )
 
-    imported_at = models.DateTimeField(
+    price_is_imported = models.BooleanField(
+        default=False,
+        help_text="True if this record has been successfully imported into price tables.",
+    )
+
+
+    product_imported_at = models.DateTimeField(
         null=True,
         blank=True,
         help_text="Timestamp when this record was imported.",
     )
 
-    is_error = models.BooleanField(
+    price_imported_at = models.DateTimeField(
+        null=True,
+        blank=True,
+        help_text="Timestamp when pricing was imported.",
+    )
+
+    is_product_import_error = models.BooleanField(
         default=False,
         help_text="True if processing this record failed.",
     )
 
-    error_message = models.TextField(
+    is_price_import_error = models.BooleanField(
+        default=False,
+        help_text="True if processing this record failed.",
+    )
+
+
+    error_message_product_import = models.TextField(
         null=True,
         blank=True,
         help_text="Detailed error message if processing failed.",
     )
 
-    retry_count = models.PositiveIntegerField(
+    error_message_price_import = models.TextField(
+        null=True,
+        blank=True,
+        help_text="Detailed error message if processing failed.",
+    )
+
+
+    retry_count_product_import = models.PositiveIntegerField(
+        default=0,
+        help_text="Number of times this record has been retried for processing.",
+    )
+
+    retry_count_price_import = models.PositiveIntegerField(
         default=0,
         help_text="Number of times this record has been retried for processing.",
     )
@@ -69,6 +99,15 @@ class ImportRawRecord(models.Model):
                 fields=["import_run", "line_number"],
                 name="uniq_import_run_line",
             )
+        ]
+        indexes = [
+        #     models.Index(fields=["supplier_product_reference"], name="idx_rawrecord_supplier_ref"),
+              models.Index(fields=["product_is_imported"], name="idx_rawrecord_product_imported"),
+              models.Index(fields=["price_is_imported"], name="idx_rawrecord_price_imported"),
+        #     models.Index(fields=["is_product_import_error"], name="idx_rawrecord_product_error"),
+        #     models.Index(fields=["is_price_import_error"], name="idx_rawrecord_price_error"),
+        #     models.Index(fields=["product_is_imported", "import_run_id"], name="idx_rawrecord_product_imported_run),"
+        #     models.Index(fields=["price_is_imported", "import_run_id"], name="idx_rawrecord_price_imported_run),"
         ]
 
     def __str__(self) -> str:
