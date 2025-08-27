@@ -1,0 +1,42 @@
+### pip install -e .
+
+[build-system]
+requires = ["setuptools>=61.0", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "areman-dj"
+version = "0.1.0"
+description = "ERP/Import system with Django"
+readme = "README.md"
+requires-python = ">=3.12"
+license = { text = "MIT" }
+
+authors = [
+    { name = "fjv", email = "admin@example.com" },
+]
+
+# Haupt-Abhängigkeiten
+dependencies = [
+    "Django>=5.2,<6.0",
+    "psycopg[binary]>=3.2,<4.0",
+    "pandas>=2.2",
+    "requests>=2.31",
+    "python-dotenv",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=8.0",
+    "pytest-django>=4.8",
+    "black>=24.0",
+    "isort>=5.12",
+]
+
+[tool.setuptools.packages.find]
+where = ["."]
+include = ["apps*", "common*", "scripts*"]
+exclude = ["tests*"]
+
+[tool.setuptools]
+zip-safe = false

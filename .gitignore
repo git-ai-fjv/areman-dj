@@ -9,6 +9,8 @@ apps/imports/data/
 all_apps_combined.py
 all_project_combined.txt
 
+*.json
+
 
 
 

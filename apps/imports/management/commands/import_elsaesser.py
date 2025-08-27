@@ -53,18 +53,19 @@ Notes:
             help="Optional max number of products to fetch (0 = no limit).",
         )
 
-    @transaction.atomic
     def handle(self, *args, **options) -> None:
         supplier_code: str = options["supplier"]
         dry_run: bool = options["dry_run"]
         limit: int = options["limit"]
 
         try:
+            # Supplier prüfen
             try:
                 supplier = Supplier.objects.get(supplier_code=supplier_code)
             except Supplier.DoesNotExist:
                 raise CommandError(f"Supplier '{supplier_code}' not found")
 
+            # SourceType prüfen
             try:
                 source_type = ImportSourceType.objects.get(code="api")
             except ImportSourceType.DoesNotExist:
@@ -83,9 +84,26 @@ Notes:
             if dry_run:
                 self.stdout.write(self.style.WARNING("[DRY-RUN] No DB changes."))
 
-                products = client.fetch_all_products(limit=50)  # kleine Testmenge
-                preview = products[:20]
+                products = []
+                page = 1
+                per_page = 100
+                while True:
+                    payload = {"page": page, "limit": per_page}
+                    resp = client._post("product", payload, context_token=client.context_token)
+                    data = resp.json()
+                    elements = data.get("elements", [])
 
+                    if not elements:
+                        break
+
+                    products.extend(elements)
+                    if limit and len(products) >= limit:
+                        break
+
+                    page += 1
+                    time.sleep(0.25)
+
+                preview = products[:20]
                 for i, p in enumerate(preview, start=1):
                     number = p.get("productNumber")
                     name = (p.get("translated") or {}).get("name")
@@ -115,34 +133,37 @@ Notes:
                 resp = client._post("product", payload, context_token=client.context_token)
                 data = resp.json()
                 elements = data.get("elements", [])
-                total = data.get("total", 0)
 
                 if not elements:
                     break
 
-                for product in elements:
-                    line_number += 1
-                    ImportRawRecord.objects.create(
-                        import_run=run,
-                        line_number=line_number,
-                        payload=product,
-                        supplier_product_reference=product.get("productNumber"),
+                # Commit pro Page
+                with transaction.atomic():
+                    for product in elements:
+                        line_number += 1
+                        ImportRawRecord.objects.create(
+                            import_run=run,
+                            line_number=line_number,
+                            payload=product,
+                            supplier_product_reference=product.get("productNumber"),
+                        )
+                        inserted += 1
+
+                        if limit and inserted >= limit:
+                            break
+
+                # Wichtige Ausgabe: aktuelle Page und Gesamtanzahl
+                self.stdout.write(
+                    self.style.NOTICE(
+                        f"✅ Page {page} complete — total {inserted} products inserted so far."
                     )
-                    inserted += 1
-
-                    if limit and inserted >= limit:
-                        break
-
-                self.stdout.write(f"Inserted {inserted} products (page {page}).")
+                )
 
                 if limit and inserted >= limit:
                     break
 
-                if page * per_page >= total:
-                    break
-
                 page += 1
-                time.sleep(0.25)  # Throttle to ~240 requests/min
+                time.sleep(0.25)  # Throttle
 
             run.finished_at = timezone.now()
             run.total_records = inserted
@@ -151,7 +172,7 @@ Notes:
 
             self.stdout.write(
                 self.style.SUCCESS(
-                    f"ImportRun {run.id} complete — {inserted} products imported."
+                    f"🎉 ImportRun {run.id} complete — {inserted} products imported."
                 )
             )
 
@@ -159,17 +180,3 @@ Notes:
             tb = traceback.format_exc()
             logger.error("Elsässer import failed: %s\n%s", e, tb)
             raise CommandError(f"Error during import: {e}\n{tb}")
-
-
-#
-# API Import Elsässer:
-#   python manage.py import_elsaesser --supplier ELS01
-#
-# Trockenlauf (nur anzeigen, max 20 Produkte):
-#   python manage.py import_elsaesser --supplier ELS01 --dry-run
-#
-# Begrenzen auf 500 Produkte:
-#   python manage.py import_elsaesser --supplier ELS01 --limit 500
-#
-
-
