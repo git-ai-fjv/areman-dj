@@ -1,6 +1,5 @@
-# Created according to the user's permanent Copilot Base Instructions.
 # apps/procurement/models/supplier_product.py
-
+# Created according to the user's permanent Copilot Base Instructions.
 from __future__ import annotations
 
 from django.db import models
@@ -10,7 +9,11 @@ from django.core.validators import MinValueValidator
 
 
 class SupplierProduct(models.Model):
-    #id = models.BigAutoField(primary_key=True)
+    """
+    Links a ProductVariant with a specific supplier.
+    Holds supplier-specific identifiers, packaging,
+    ordering constraints and procurement metadata.
+    """
 
     organization = models.ForeignKey(
         "core.Organization",
@@ -30,50 +33,71 @@ class SupplierProduct(models.Model):
         related_name="supplier_products",
     )
 
-    supplier_sku = models.CharField(max_length=100)
-    pack_size = models.DecimalField(
-        max_digits=10, decimal_places=3, default=1,
-        validators=[MinValueValidator(0.001)]
+    # Identification at supplier side
+    supplier_sku = models.CharField(
+        max_length=100,
+        help_text="Article number / SKU as used by the supplier."
     )
-    min_order_qty = models.DecimalField(
-        max_digits=10, decimal_places=3, default=0,
-        validators=[MinValueValidator(0)]
-    )
-    lead_time_days = models.IntegerField(default=0, validators=[MinValueValidator(0)])
-
-    is_active = models.BooleanField(default=True)
-
     supplier_description = models.CharField(
-        max_length=200,
+        max_length=500,
         blank=True,
         default="",
-        help_text="Optional supplier-specific description.",
+        help_text="Optional description as provided by supplier (may differ from catalog description).",
     )
+
+    # Procurement attributes
+    pack_size = models.DecimalField(
+        max_digits=10,
+        decimal_places=3,
+        default=1,
+        validators=[MinValueValidator(0.001)],
+        help_text="Number of base units in one pack as sold by supplier.",
+    )
+    min_order_qty = models.DecimalField(
+        max_digits=10,
+        decimal_places=3,
+        default=0,
+        validators=[MinValueValidator(0)],
+        help_text="Minimum order quantity (MOQ) at supplier.",
+    )
+    lead_time_days = models.IntegerField(
+        default=0,
+        validators=[MinValueValidator(0)],
+        help_text="Standard lead time in days until delivery.",
+    )
+
+    # Flags
+    is_active = models.BooleanField(default=True)
+    is_preferred = models.BooleanField(
+        default=False,
+        help_text="Marks the preferred supplier for this variant."
+    )
+
     notes = models.TextField(null=True, blank=True)
 
+    # Timestamps
     created_at = models.DateTimeField(db_default=Now(), editable=False)
     updated_at = models.DateTimeField(db_default=Now(), editable=False)
 
     def __str__(self) -> str:
-        return f"[org={self.organization}] supp={self.supplier} sku={self.supplier_sku} -> variant={self.variant}"
+        return (
+            f"[org={self.organization}] supplier={self.supplier} "
+            f"sku={self.supplier_sku} -> variant={self.variant.sku}"
+        )
 
     class Meta:
-        # db_table = "supplier_product"
-        # indexes = [
-        #     models.Index(fields=("organization",), name="idx_spp_org"),
-        #     models.Index(fields=("supplier",),    name="idx_spp_supplier"),
-        #     models.Index(fields=("variant",),     name="idx_spp_variant"),
-        #     models.Index(fields=("is_active",),   name="idx_spp_active"),
-        #     models.Index(fields=("supplier_sku",),name="idx_spp_sku"),
-        # ]
         constraints = [
             models.UniqueConstraint(
                 fields=("organization", "variant", "supplier"),
-                name="uniq_spp_supplier_sku",
+                name="uniq_supplier_product",
             ),
-            models.CheckConstraint(name="ck_spp_pack_pos",   check=Q(pack_size__gt=0)),
-            models.CheckConstraint(name="ck_spp_moq_nonneg", check=Q(min_order_qty__gte=0)),
-            models.CheckConstraint(name="ck_spp_lead_nonneg",check=Q(lead_time_days__gte=0)),
+            models.CheckConstraint(
+                name="ck_supplier_packsize_positive", check=Q(pack_size__gt=0)
+            ),
+            models.CheckConstraint(
+                name="ck_supplier_moq_nonneg", check=Q(min_order_qty__gte=0)
+            ),
+            models.CheckConstraint(
+                name="ck_supplier_leadtime_nonneg", check=Q(lead_time_days__gte=0)
+            ),
         ]
-
-

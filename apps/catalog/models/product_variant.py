@@ -10,7 +10,7 @@ from django.db.models.functions import Now
 class ProductVariant(models.Model):
     """
     Sellable unit (SKU). Holds SKU/EAN, packaging, logistics data,
-    and order constraints.
+    order constraints, and optional list price (UVP/MSRP).
     """
 
     organization = models.ForeignKey(
@@ -74,7 +74,6 @@ class ProductVariant(models.Model):
     available_stock = models.IntegerField(null=True, blank=True)
     is_available = models.BooleanField(
         default=False,
-#        db_index=True,
         help_text="Availability flag as provided by supplier API.",
     )
     shipping_free = models.BooleanField(default=False)
@@ -102,5 +101,3 @@ class ProductVariant(models.Model):
                 name="uniq_variant_org_product_pack_origin_state",
             ),
         ]
-
-
