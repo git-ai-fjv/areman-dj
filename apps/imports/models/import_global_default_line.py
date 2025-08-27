@@ -1,9 +1,10 @@
 # apps/imports/models/import_global_default_line.py
-# Created according to the user's permanent Copilot Base Instructions.
 
 from __future__ import annotations
 from django.db import models
 from apps.imports.models.import_global_default_set import ImportGlobalDefaultSet
+from apps.imports.models.import_data_type import ImportDataType
+from apps.imports.models.import_transform_type import ImportTransformType
 
 
 class ImportGlobalDefaultLine(models.Model):
@@ -20,8 +21,25 @@ class ImportGlobalDefaultLine(models.Model):
 
     target_path = models.CharField(max_length=255)
     default_value = models.JSONField(null=True, blank=True)
-    transform = models.CharField(max_length=50, null=True, blank=True)
+
+    # statt CharField → FK
+    transform = models.ForeignKey(
+        ImportTransformType,
+        on_delete=models.PROTECT,
+        null=True,
+        blank=True,
+        related_name="default_lines",
+        help_text="Transform to apply to this field (FK instead of free text).",
+    )
+
     is_required = models.BooleanField(default=False)
+
+    target_datatype = models.ForeignKey(
+        ImportDataType,
+        on_delete=models.PROTECT,
+        related_name="default_lines",
+        help_text="Datatype for this default value (e.g., str, int, decimal)."
+    )
 
     class Meta:
         verbose_name = "Import Global Default Line"
@@ -35,4 +53,3 @@ class ImportGlobalDefaultLine(models.Model):
 
     def __str__(self) -> str:
         return f"{self.target_path} = {self.default_value}"
-

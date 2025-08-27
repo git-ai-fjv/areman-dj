@@ -180,7 +180,7 @@ resetdb:  ## Reset database (drop, create, migrate, seed)
 # Django management
 # =============================================================================
 run:  ## Run the Django development server
-	python manage.py runserver
+	python manage.py runserver 0.0.0.0:8005
 
 shell:  ## Open Django shell
 	python manage.py shell

@@ -1,0 +1,35 @@
+###################################
+## create database
+###################################
+
+## switch to postgresql user
+sudo -i -u postgres
+
+
+psql
+
+CREATE USER ardb WITH PASSWORD 'NBcak392983MNa1239+2';
+CREATE DATABASE aredb OWNER ardb;
+GRANT ALL PRIVILEGES ON DATABASE aredb TO ardb;
+\q
+exit
+
+### enable remote:
+sudo nano /etc/postgresql/15/main/postgresql.conf
+
+### uncomment:
+listen_addresses = '*'
+
+sudo nano /etc/postgresql/15/main/pg_hba.conf
+### add line:
+host    all             all             0.0.0.0/0            md5
+
+### restart
+sudo systemctl restart postgresql
+
+### show data dirctory
+
+sudo -u postgres psql -c "SHOW data_directory;"
+
+/var/lib/postgresql/15/main
+

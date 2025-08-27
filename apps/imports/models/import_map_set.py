@@ -51,5 +51,3 @@ class ImportMapSet(models.Model):
 
     def __str__(self) -> str:
         return f"{self.supplier.supplier_code} / {self.source_type.code} (from {self.valid_from})"
-
-

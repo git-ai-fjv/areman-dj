@@ -4,6 +4,7 @@
 from __future__ import annotations
 from django.db import models
 from apps.imports.models.import_map_set import ImportMapSet
+from apps.imports.models.import_data_type import ImportDataType
 
 
 class ImportMapDetail(models.Model):
@@ -29,6 +30,13 @@ class ImportMapDetail(models.Model):
         help_text="Path in the standardized dict (e.g., 'product.name', 'price.price').",
     )
 
+    target_datatype = models.ForeignKey(
+        ImportDataType,
+        on_delete=models.PROTECT,
+        related_name="map_details",
+        help_text="Datatype the target value should be converted to.",
+    )
+
     transform = models.CharField(
         max_length=50,
         null=True,
@@ -52,6 +60,4 @@ class ImportMapDetail(models.Model):
         ]
 
     def __str__(self) -> str:
-        return f"{self.source_path} → {self.target_path}"
-
-
+        return f"{self.source_path} → {self.target_path} ({self.target_datatype.code})"

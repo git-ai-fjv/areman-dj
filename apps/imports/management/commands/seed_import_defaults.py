@@ -17,7 +17,7 @@ class Command(BaseCommand):
     Seed ImportGlobalDefaultSet and ImportGlobalDefaultLine with initial values.
     """
 
-    help = "Create a new ImportGlobalDefaultSet with default lines for an organization."
+    help = "Create or reuse an ImportGlobalDefaultSet with default lines for an organization."
 
     def add_arguments(self, parser) -> None:
         parser.add_argument(
@@ -56,19 +56,22 @@ class Command(BaseCommand):
         else:
             valid_from = timezone.now().date()
 
-        # 3. Seed ausführen
-        default_set = ops.seed_initial_defaults(org, valid_from)
+        # 3. Seed ausführen (idempotent)
+        default_set, created = ops.seed_initial_defaults(org, valid_from)
 
-        self.stdout.write(
-            self.style.SUCCESS(
-                f"Created ImportGlobalDefaultSet {default_set.id} "
-                f"with {default_set.global_default_lines.count()} lines "
-                f"(valid_from={valid_from}, org={org.pk})."
+        if created:
+            self.stdout.write(
+                self.style.SUCCESS(
+                    f"✅ Created ImportGlobalDefaultSet {default_set.id} "
+                    f"with {default_set.global_default_lines.count()} lines "
+                    f"(valid_from={valid_from}, org={org.pk})."
+                )
             )
-        )
-        # python manage.py seed_import_defaults --org 1 --valid-from 2025-01-01
-
-
-
-
-
+        else:
+            self.stdout.write(
+                self.style.WARNING(
+                    f"⚠ Using existing ImportGlobalDefaultSet {default_set.id} "
+                    f"with {default_set.global_default_lines.count()} lines "
+                    f"(valid_from={valid_from}, org={org.pk})."
+                )
+            )

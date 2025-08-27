@@ -39,7 +39,11 @@ python manage.py seed_import_source_types
 
 echo "****************** default dummy ********************************"
 python manage.py seed_suppliers --items "1:SUPP01:Default dummy Supplier for tests:0"
-
+python manage.py seed_suppliers --items "1:70001:Elsaesser:1"
+python manage.py seed_suppliers --items "1:70002:Kuhn:1"
+echo "****************** data types for import ********************************"
+python manage.py seed_import_transform_types
+python manage.py seed_import_data_types
 echo "****************** create default for import ********************************"
 python manage.py seed_import_defaults --org 1 --valid-from 2025-01-01
 
