@@ -60,6 +60,13 @@ erDiagram
         CharField slug
         CharField manufacturer_part_number
         CharField manufacturer_part_number_norm
+        TextField description
+        CharField meta_title
+        TextField meta_description
+        CharField keywords
+        BooleanField is_new
+        BooleanField is_closeout
+        DateField release_date
         BooleanField is_active
         DateTimeField created_at
         DateTimeField updated_at
@@ -86,9 +93,22 @@ erDiagram
     CATALOG_PRODUCTVARIANT {
         BigAutoField id
         CharField sku
+        CharField ean
         CharField barcode
         IntegerField customs_code
         DecimalField weight
+        DecimalField width
+        DecimalField height
+        DecimalField length
+        CharField eclass_code
+        IntegerField stock_quantity
+        IntegerField available_stock
+        BooleanField is_available
+        BooleanField shipping_free
+        IntegerField min_purchase
+        IntegerField max_purchase
+        IntegerField purchase_steps
+        BooleanField is_topseller
         BooleanField is_active
         DateTimeField created_at
         DateTimeField updated_at
@@ -194,17 +214,33 @@ erDiagram
         DateTimeField created_at
         DateTimeField updated_at
     }
+    PROCUREMENT_SUPPLIERPRICE {
+        BigAutoField id
+        DecimalField unit_price
+        DecimalField min_quantity
+        DateField valid_from
+        DateField valid_to
+        BooleanField is_active
+        DateTimeField created_at
+        DateTimeField updated_at
+    }
     PROCUREMENT_SUPPLIERPRODUCT {
         BigAutoField id
         CharField supplier_sku
+        CharField supplier_description
         DecimalField pack_size
         DecimalField min_order_qty
         IntegerField lead_time_days
         BooleanField is_active
-        CharField supplier_description
+        BooleanField is_preferred
         TextField notes
         DateTimeField created_at
         DateTimeField updated_at
+    }
+    PROCUREMENT_SUPPLIERQUANTITYPRICE {
+        BigAutoField id
+        DecimalField min_quantity
+        DecimalField unit_price
     }
     SALES_SALESORDER {
         BigAutoField id
@@ -250,6 +286,17 @@ erDiagram
         BigAutoField id
         IntegerField line_number
         JSONField payload
+        CharField supplier_product_reference
+        BooleanField product_is_imported
+        BooleanField price_is_imported
+        DateTimeField product_imported_at
+        DateTimeField price_imported_at
+        BooleanField is_product_import_error
+        BooleanField is_price_import_error
+        TextField error_message_product_import
+        TextField error_message_price_import
+        PositiveIntegerField retry_count_product_import
+        PositiveIntegerField retry_count_price_import
     }
     IMPORTS_IMPORTRUN {
         BigAutoField id
@@ -300,9 +347,12 @@ erDiagram
     CORE_ORGANIZATION ||--o{ PROCUREMENT_PURCHASEORDERLINE : organization
     PROCUREMENT_PURCHASEORDER ||--o{ PROCUREMENT_PURCHASEORDERLINE : purchase_order
     PROCUREMENT_SUPPLIERPRODUCT ||--o{ PROCUREMENT_PURCHASEORDERLINE : supplier_product
+    PROCUREMENT_SUPPLIERPRODUCT ||--o{ PROCUREMENT_SUPPLIERPRICE : supplier_product
+    CORE_CURRENCY ||--o{ PROCUREMENT_SUPPLIERPRICE : currency
     CORE_ORGANIZATION ||--o{ PROCUREMENT_SUPPLIERPRODUCT : organization
     PARTNERS_SUPPLIER ||--o{ PROCUREMENT_SUPPLIERPRODUCT : supplier
     CATALOG_PRODUCTVARIANT ||--o{ PROCUREMENT_SUPPLIERPRODUCT : variant
+    PROCUREMENT_SUPPLIERPRICE ||--o{ PROCUREMENT_SUPPLIERQUANTITYPRICE : supplier_price
     CORE_ORGANIZATION ||--o{ SALES_SALESORDER : organization
     PARTNERS_CUSTOMER ||--o{ SALES_SALESORDER : customer
     CORE_CURRENCY ||--o{ SALES_SALESORDER : currency

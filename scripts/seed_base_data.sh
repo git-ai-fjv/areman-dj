@@ -40,7 +40,12 @@ python manage.py seed_import_source_types
 echo "****************** default dummy ********************************"
 python manage.py seed_suppliers --items "1:SUPP01:Default dummy Supplier for tests:0"
 
+echo "****************** create default for import ********************************"
+python manage.py seed_import_defaults --org 1 --valid-from 2025-01-01
+
 echo "****************** Create superuser ********************************"
+
+
 DJANGO_SUPERUSER_USERNAME=fjv \
 DJANGO_SUPERUSER_EMAIL=admin@example.com \
 DJANGO_SUPERUSER_PASSWORD=1 \

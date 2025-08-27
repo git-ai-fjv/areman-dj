@@ -23,6 +23,12 @@ class ImportGlobalDefaultSet(models.Model):
     class Meta:
         verbose_name = "Import Global Default Set"
         verbose_name_plural = "Import Global Default Sets"
+        constraints = [
+            models.UniqueConstraint(
+                fields=["organization", "valid_from"],
+                name="uq_globaldefaultset_org_validfrom",
+            )
+        ]
 
     def __str__(self) -> str:
         return f"{self.description} (from {self.valid_from})"
