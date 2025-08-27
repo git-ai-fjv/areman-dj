@@ -10,7 +10,7 @@ from django.db.models.functions import Now
 class ProductVariant(models.Model):
     """
     Sellable unit (SKU). Holds SKU/EAN, packaging, logistics data,
-    order constraints, and optional list price (UVP/MSRP).
+    order constraints, availability, and marketing flags.
     """
 
     organization = models.ForeignKey(
@@ -82,6 +82,12 @@ class ProductVariant(models.Model):
     min_purchase = models.IntegerField(default=1)
     max_purchase = models.IntegerField(null=True, blank=True)
     purchase_steps = models.IntegerField(default=1)
+
+    # Marketing
+    is_topseller = models.BooleanField(
+        default=False,
+        help_text="Flag indicating this variant is marked as top seller in the shop.",
+    )
 
     is_active = models.BooleanField(default=True)
 
