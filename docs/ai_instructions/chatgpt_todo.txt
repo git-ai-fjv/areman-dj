@@ -1,0 +1,29 @@
+„Scanne die Datei seitenweise und erstelle eine vollständige Liste aller class …(models.Model) Definitionen. Mach das in mehreren Schritten, bis du alle gefunden hast.“
+
+
+
+Modelle:
+„Scanne die Datei seitenweise und sammle alle class …(models.Model) Definitionen.“
+
+Tabellen:
+„Scanne die Datei seitenweise und sammle alle SQL CREATE TABLE Statements.“
+
+Funktionen:
+„Scanne die Datei seitenweise und sammle alle def … Funktionen.“
+
+Admin-Views:
+„Scanne die Datei seitenweise und sammle alle class …(admin.ModelAdmin) Definitionen.“
+
+Scanne die Datei seitenweise und erstelle eine vollständige Liste aller
+`class …(models.Model)` Definitionen.
+Arbeite solange automatisch weiter, bis du die gesamte Datei verarbeitet hast.
+Frage mich NICHT nach jedem Schritt, sondern fahre eigenständig fort,
+bis die Liste komplett ist.
+
+
+Scanne die Datei seitenweise und extrahiere nicht nur die Funktionssignaturen (`def …`),
+sondern auch den kompletten Funktionskörper bis zur nächsten Definition oder Klassen-Definition.
+Arbeite automatisch weiter, bis die gesamte Datei verarbeitet ist.
+Frage mich NICHT nach jedem Schritt.
+
+

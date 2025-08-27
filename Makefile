@@ -105,7 +105,6 @@ gen-docs:
 # =============================================================================
 # Quality
 # =============================================================================
-
 lint:  ## Run flake8 lint checks
 	flake8 apps
 
@@ -118,7 +117,6 @@ isort:  ## Sort imports with isort
 # =============================================================================
 # Tests
 # =============================================================================
-
 test:  ## Run tests with pytest
 	pytest -q --disable-warnings
 
@@ -128,7 +126,6 @@ coverage:  ## Run tests with coverage
 # =============================================================================
 # Seeds
 # =============================================================================
-
 seed:  ## Seed base data (organizations, manufacturers, etc.)
 	@echo "Seeding base data..."
 	bash scripts/seed_base_data.sh
@@ -137,7 +134,6 @@ seed:  ## Seed base data (organizations, manufacturers, etc.)
 # =============================================================================
 # Database & migrations
 # =============================================================================
-
 migrate:  ## Apply database migrations
 	python manage.py migrate
 
@@ -183,7 +179,6 @@ resetdb:  ## Reset database (drop, create, migrate, seed)
 # =============================================================================
 # Django management
 # =============================================================================
-
 run:  ## Run the Django development server
 	python manage.py runserver
 
@@ -195,3 +190,16 @@ superuser:  ## Create a Django superuser interactively
 
 check:  ## Run Django system checks
 	python manage.py check
+
+# =============================================================================
+# Project Collector
+# =============================================================================
+collect:  ## Collect all relevant source files into one combined file (ignores .gitignore and migrations)
+	@echo "Collecting project files..."
+	@git ls-files \
+		| grep -Ei '\.py$$|\.md$$|\.txt$$|dockerfile|makefile' \
+		| grep -Ev '/migrations/' \
+		| xargs awk 'FNR==1{print "\n\n# FILE:",FILENAME,"\n"}{print}' \
+		> all_project_combined.txt
+	@echo ""
+	@echo "$(GREEN)✔ Combined file written to all_project_combined.txt$(RESET)"

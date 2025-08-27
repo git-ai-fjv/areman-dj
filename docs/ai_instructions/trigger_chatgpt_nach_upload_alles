@@ -1,0 +1,37 @@
+
+Scanne die Datei seitenweise und erstelle eine vollständige Liste aller class …(models.Model) Definitionen.
+Arbeite automatisch weiter, bis die ganze Datei verarbeitet ist.
+Frage mich NICHT nach jedem Schritt.
+
+
+Extrahiere alle class …(models.Model) Definitionen inklusive aller Felder und Meta-Klassen.
+Scanne die Datei seitenweise, arbeite automatisch weiter bis zum Ende.
+Frage mich NICHT zwischendurch.
+
+
+Scanne die Datei seitenweise und liste alle def … Signaturen mit Zeilennummer auf.
+Arbeite automatisch weiter bis zum Ende.
+Keine Nachfrage nach jedem Schritt.
+
+Extrahiere alle def … Definitionen inklusive ihres kompletten Inhalts (bis zur nächsten Funktion oder Klasse).
+Scanne die Datei seitenweise und arbeite automatisch weiter.
+Keine Rückfragen stellen.
+
+Scanne die Datei seitenweise und extrahiere alle class … Definitionen (Name + Basisklassen).
+Arbeite automatisch weiter bis Ende der Datei.
+
+Extrahiere jede class … Definition mit dem kompletten Inhalt (Methoden, Meta-Klassen, Felder).
+Arbeite automatisch weiter ohne Rückfragen.
+
+Suche in der Datei alle class …(admin.ModelAdmin) Definitionen und extrahiere sie vollständig.
+Scanne die Datei seitenweise, automatisch weiterarbeiten bis zum Ende.
+
+Scanne die Datei seitenweise und extrahiere alle Dateien/Abschnitte aus dem Ordner apps/lnd_app/services/.
+Gib den kompletten Code. Automatisch weiterarbeiten bis zum Ende.
+
+
+
+
+
+
+
