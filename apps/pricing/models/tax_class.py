@@ -1,19 +1,37 @@
-# Created according to the user's Copilot Base Instructions.
+# apps/pricing/models/tax_class.py
 """
--- =========================
--- TABLE: tax_class
--- =========================
-CREATE TABLE public.tax_class (
-  id           INTEGER       PRIMARY KEY NOT NULL,
-  name         VARCHAR(100)  NOT NULL,
-  rate         NUMERIC(5,4)  NOT NULL,   -- z.B. 0.1900 (=19%)
-  created_at   TIMESTAMPTZ   NOT NULL DEFAULT statement_timestamp(),
-  updated_at   TIMESTAMPTZ   NOT NULL DEFAULT statement_timestamp(),
-  CONSTRAINT uniq_tax_class_name UNIQUE (name),
-  CONSTRAINT ck_tax_class_rate CHECK (rate >= 0 AND rate <= 1)
-);
-CREATE INDEX idx_tax_class_rate ON public.tax_class (rate);
+Purpose:
+    Defines tax classes for products and services, including name and rate.
+    Used to determine applicable tax percentages (e.g., 19% VAT).
+
+Context:
+    Part of the pricing domain. Each TaxClass represents a distinct taxation
+    rule that can be applied to price calculations in ERP and shop systems.
+
+Fields:
+    - name (CharField, unique): Human-readable name for the tax class (e.g., "Standard VAT").
+    - rate (DecimalField, 5,4): Tax rate as a decimal fraction (0–1, e.g., 0.1900 = 19%).
+    - created_at / updated_at (DateTimeField): Audit timestamps.
+
+Relations:
+    - May be referenced by products, price rules, or invoice logic in other models.
+
+Used by:
+    - Pricing and billing systems to apply the correct tax rate
+    - ERP processes for compliance and reporting
+    - Import and catalog services for mapping external tax definitions
+
+Depends on:
+    - Django ORM (validation and constraints)
+
+Example:
+    >>> from apps.pricing.models import TaxClass
+    >>> vat = TaxClass.objects.create(name="Standard VAT", rate="0.1900")
+    >>> print(vat)
+    Standard VAT (0.1900)
 """
+
+
 from __future__ import annotations
 
 from django.db import models

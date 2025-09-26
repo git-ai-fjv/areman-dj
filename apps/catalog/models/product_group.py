@@ -1,5 +1,47 @@
 # apps/catalog/models/product_group.py
-# Created according to the user's permanent Copilot Base Instructions.
+
+# apps/catalog/models/product_group.py
+"""
+Purpose:
+    Represents a grouping of products within an organization.
+    Each group is identified by a short code and description.
+
+Context:
+    Part of the `catalog` app. ProductGroups provide a logical structure
+    for organizing Products. Every Product must belong to one ProductGroup.
+    Used in imports, seeding, and catalog management.
+
+Fields:
+    - id (AutoField): Primary key.
+    - organization (FK → core.Organization): Owning organization.
+    - product_group_code (CharField, 20): Unique code per organization.
+    - product_group_description (CharField, 200): Optional human-readable label.
+
+Relations:
+    - Organization → multiple ProductGroups.
+    - ProductGroup → multiple Products (via FK in Product).
+
+Used by:
+    - apps/catalog/models/product.py (FK to ProductGroup).
+    - Import and seeding services that build catalog structures.
+
+Depends on:
+    - Django ORM
+    - core.Organization
+
+Example:
+    >>> from apps.catalog.models import ProductGroup
+    >>> pg = ProductGroup.objects.create(
+    ...     organization=org,
+    ...     product_group_code="FILTERS",
+    ...     product_group_description="Air and oil filters"
+    ... )
+    >>> print(pg)
+    FILTERS — Air and oil filters
+"""
+
+
+
 from __future__ import annotations
 
 from django.db import models

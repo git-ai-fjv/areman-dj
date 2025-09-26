@@ -1,5 +1,31 @@
 # apps/imports/services/transform_utils.py
-# Created according to the user's permanent Copilot Base Instructions.
+"""
+Purpose:
+    Utility functions for applying transformations to raw import values
+    (string normalization, type conversion, boolean parsing, etc.).
+
+Context:
+    Part of the `apps.imports.services` package.
+    Used to enforce consistent transformations across import pipelines
+    based on configured ImportTransformType entries.
+
+Used by:
+    - apps/imports/services/import_defaults_ops.py
+    - Any importer or service applying ImportTransformType mappings
+
+Depends on:
+    - apps.imports.models.import_transform_type.ImportTransformType
+    - Python stdlib: decimal.Decimal for numeric conversion
+
+Example:
+    from apps.imports.services.transform_utils import apply_transform
+    from apps.imports.models.import_transform_type import ImportTransformType
+
+    transform = ImportTransformType(code="uppercase")
+    result = apply_transform("hello", transform)
+    print(result)  # "HELLO"
+"""
+
 
 from __future__ import annotations
 

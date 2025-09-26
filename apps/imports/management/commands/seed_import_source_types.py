@@ -1,5 +1,30 @@
 #!/usr/bin/env python3
+
 # apps/imports/management/commands/seed_import_source_types.py
+"""
+Purpose:
+    Management command to seed default `ImportSourceType` records. Ensures
+    consistent source type classification for imports (file, API, manual, other).
+
+Context:
+    Part of the `apps.imports` app. Used during system setup or migrations
+    to initialize baseline source type records.
+
+Used by:
+    - Developers and operators via `python manage.py seed_import_source_types`
+    - Import commands that require a valid ImportSourceType reference
+      (e.g., `import_komatsu`, `import_elsaesser`)
+
+Depends on:
+    - apps.imports.models.import_source_type.ImportSourceType
+    - Django management command framework
+
+Example:
+    # Seed all default import source types
+    python manage.py seed_import_source_types
+"""
+
+
 from __future__ import annotations
 
 from django.core.management.base import BaseCommand

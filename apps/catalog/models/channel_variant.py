@@ -1,6 +1,51 @@
 # apps/catalog/models/channel_variant.py
-# Created according to the user's Copilot Base Instructions.
-# the
+"""
+Purpose:
+    Represent the assignment of a ProductVariant to a sales Channel
+    within a specific Organization. Defines availability, publishing
+    flags, synchronization state, and external shop IDs.
+
+Context:
+    Part of the `catalog` app. Used to manage how product variants
+    are distributed into different sales channels (e.g. webshop,
+    marketplace). Central for integration and synchronization.
+
+Fields:
+    - organization (FK → core.Organization): Owning organization.
+    - channel (FK → catalog.Channel): The sales channel.
+    - variant (FK → catalog.ProductVariant): The specific product variant.
+    - publish (BooleanField): Flag whether this variant is published.
+    - is_active (BooleanField): Active/inactive marker.
+    - need_shop_update (BooleanField): Marks pending synchronization.
+    - shop_product_id (CharField): External shop product identifier.
+    - shop_variant_id (CharField): External shop variant identifier.
+    - last_synced_at (DateTimeField): Timestamp of last synchronization.
+    - last_error (TextField): Stores last sync error message.
+    - meta_json (JSONField): Flexible metadata/extensions.
+    - created_at / updated_at (DateTimeField): Audit timestamps.
+
+Relations:
+    - Organization → multiple ChannelVariants
+    - Channel → multiple ChannelVariants
+    - ProductVariant → multiple ChannelVariants
+
+Used by:
+    - Synchronization services to external shops
+    - Pricing and publication processes
+    - Monitoring/reporting of channel sync states
+
+Depends on:
+    - Django ORM
+    - core.Organization
+    - catalog.Channel
+    - catalog.ProductVariant
+
+Example:
+    >>> from apps.catalog.models import ChannelVariant
+    >>> ChannelVariant.objects.filter(channel__kind="shop", publish=True)
+"""
+
+
 
 from __future__ import annotations
 

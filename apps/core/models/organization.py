@@ -1,5 +1,29 @@
-#!/usr/bin/env python3
-# Created according to the user's permanent Copilot Base Instructions.
+# apps/core/models/organization.py
+"""
+Purpose:
+    Master data table for organizations (tenants/mandants).
+    Provides a scoped context for all other business entities.
+
+Context:
+    Every business object (customer, supplier, product, pricing, etc.)
+    is linked to an Organization via org_code.
+
+Fields:
+    - org_code (SmallInteger, PK): Unique code identifying the organization.
+    - org_description (CharField): Optional description/name.
+
+Constraints:
+    - org_code is the primary key.
+    - No additional constraints defined.
+
+Example:
+    >>> from apps.core.models import Organization
+    >>> org = Organization.objects.create(org_code=1, org_description="Main Company")
+    >>> str(org)
+    'Main Company'
+"""
+
+
 from __future__ import annotations
 from django.db import models
 

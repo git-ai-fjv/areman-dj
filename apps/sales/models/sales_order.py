@@ -1,6 +1,46 @@
 # apps/sales/models/sales_order.py
-#!/usr/bin/env python3
-# Created according to the user's permanent Copilot Base Instructions.
+"""
+Purpose:
+    Represents the header of a sales order, scoped by organization.
+    Tracks business partner, currency, status, and important dates.
+
+Context:
+    Part of the sales domain. This table is the parent for sales order lines
+    and drives fulfillment, invoicing, and reporting.
+
+Fields:
+    - organization (FK → Organization): Tenant isolation.
+    - customer (FK → Customer): Buyer reference.
+    - order_number (CharField): Unique per organization.
+    - status (CharField): Lifecycle state (draft|confirmed|shipped|invoiced|cancelled).
+    - currency (FK → Currency): Transaction currency.
+    - expected_date (DateField): Optional promised delivery date.
+    - notes (TextField): Optional free-text notes.
+    - is_active (Bool): Logical deletion flag.
+    - created_at / updated_at: System timestamps.
+
+Relations:
+    - SalesOrder → multiple SalesOrderLine (items).
+    - Linked to invoicing, shipping, and pricing modules.
+
+Constraints:
+    - (organization, order_number) unique.
+    - (organization, id) unique for safety.
+    - Status restricted by check constraint.
+
+Example:
+    >>> from apps.sales.models import SalesOrder
+    >>> so = SalesOrder.objects.create(
+    ...     organization=org,
+    ...     customer=cust,
+    ...     order_number="SO-2025-001",
+    ...     currency=eur,
+    ... )
+    >>> print(so)
+    [org=MyOrg] SO SO-2025-001 (draft)
+"""
+
+
 from __future__ import annotations
 
 from django.db import models

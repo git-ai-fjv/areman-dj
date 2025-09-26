@@ -1,5 +1,63 @@
 # apps/catalog/models/product.py
-# Created according to the user's permanent Copilot Base Instructions.
+
+# apps/catalog/models/product.py
+"""
+Purpose:
+    Define master product data shared across all variants.
+    Stores catalog-wide attributes such as name, manufacturer,
+    part number, SEO metadata, and marketing flags.
+
+Context:
+    Part of the `catalog` app. Products serve as the base entity for
+    all sellable variants (ProductVariant) and are referenced by
+    channel-specific models. Provides a stable anchor for procurement,
+    pricing, and shop integration.
+
+Fields:
+    - id (AutoField): Primary key.
+    - organization (FK → core.Organization): Owning organization.
+    - name (CharField, 200): Human-readable product name.
+    - slug (CharField, 200): Unique slug within an organization.
+    - manufacturer (FK → catalog.Manufacturer): Brand or vendor.
+    - manufacturer_part_number (CharField, 100): Raw part number.
+    - manufacturer_part_number_norm (GeneratedField, 100): Normalized part
+      number, computed via PostgreSQL `REGEXP_REPLACE`.
+    - product_group (FK → catalog.ProductGroup): Classification/group.
+    - description (TextField): Long product description, optional.
+    - meta_title / meta_description / keywords: SEO fields.
+    - is_new (Boolean): Marketing flag (new release).
+    - is_closeout (Boolean): Marketing flag (discontinued).
+    - release_date (DateField): Release information.
+    - is_active (Boolean): Availability flag.
+    - created_at / updated_at (DateTimeField): Audit timestamps.
+
+Relations:
+    - Organization → multiple Products.
+    - Manufacturer → multiple Products.
+    - ProductGroup → multiple Products.
+    - Referenced by ProductVariant and ChannelVariant.
+
+Used by:
+    - Catalog (ProductVariant definitions).
+    - Pricing and Procurement modules.
+    - External integrations (shop systems, supplier APIs).
+
+Depends on:
+    - Django ORM
+    - core.Organization
+    - catalog.Manufacturer
+    - catalog.ProductGroup
+
+Example:
+    >>> from apps.catalog.models import Product
+    >>> Product.objects.filter(
+    ...     organization__org_code=1,
+    ...     is_active=True,
+    ...     is_closeout=False,
+    ... )
+"""
+
+
 from __future__ import annotations
 
 from django.db import models

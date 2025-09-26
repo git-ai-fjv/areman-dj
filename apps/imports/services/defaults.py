@@ -1,5 +1,30 @@
 # apps/imports/services/defaults.py
-# Created according to the user's permanent Copilot Base Instructions.
+"""
+Purpose:
+    Provides utilities for retrieving and assembling active global default sets
+    into structured dictionaries for use during import processing.
+
+Context:
+    Part of the `apps.imports.services` package.
+    Used to look up ImportGlobalDefaultSet entries and group their lines
+    (e.g., product, variant, price, supplier, supplier_product) into nested dicts.
+
+Used by:
+    - Import pipelines and services that need a ready-to-use defaults dictionary
+    - Local testing (via __main__ execution)
+
+Depends on:
+    - apps.imports.models.import_global_default_set.ImportGlobalDefaultSet
+    - Django ORM for querying active default sets
+    - django.utils.timezone for date comparison
+
+Example:
+    from apps.imports.services.defaults import build_base_dict
+
+    base_dict = build_base_dict(org_id=1)
+    print(base_dict["product"]["name"])
+"""
+
 
 from __future__ import annotations
 

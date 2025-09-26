@@ -1,4 +1,50 @@
-# Created according to the user's Copilot Base Instructions.
+# apps/pricing/models/price_list.py
+"""
+Purpose:
+    Represents a price list definition within an organization.
+    Each price list groups together prices in a given currency and
+    can be used for either sales or procurement contexts.
+
+Context:
+    Belongs to the pricing domain. PriceLists are the containers for
+    product/variant pricing records and are associated with a single currency.
+
+Fields:
+    - organization (FK → core.Organization): The owning organization.
+    - price_list_code (CharField, max 20): Unique code per organization.
+    - price_list_description (CharField, max 200): Human-readable description.
+    - kind (CharField, max 1): Type of list, 'S' (sales) or 'P' (procurement).
+    - currency (FK → core.Currency): Currency of all prices in this list.
+    - is_active (BooleanField): Whether the price list is active.
+    - created_at / updated_at (DateTimeField): Audit timestamps.
+
+Relations:
+    - Organization → multiple PriceLists
+    - Currency → multiple PriceLists
+    - PriceList → referenced by price detail tables (e.g., variant prices)
+
+Used by:
+    - Sales processes to fetch customer price lists
+    - Procurement processes to manage supplier price lists
+    - Pricing services and ERP import routines
+
+Depends on:
+    - apps.core.models.Organization
+    - apps.core.models.Currency
+
+Example:
+    >>> from apps.pricing.models import PriceList
+    >>> pl = PriceList.objects.create(
+    ...     organization=org,
+    ...     price_list_code="RETAIL-2025",
+    ...     price_list_description="Retail price list for 2025",
+    ...     kind="S",
+    ...     currency=eur
+    ... )
+    >>> print(pl)
+    [Org1] RETAIL-2025 (S)
+"""
+
 
 from __future__ import annotations
 

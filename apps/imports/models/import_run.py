@@ -1,5 +1,50 @@
 # apps/imports/models/import_run.py
-# Created according to the user's permanent Copilot Base Instructions.
+"""
+Purpose:
+    Represents a single supplier import execution (header record).
+    Tracks metadata about the run, including timing, status, source, and counts.
+
+Context:
+    Belongs to the imports domain. Each ImportRun serves as the parent entity
+    for ImportRawRecord entries and error logs. Used to monitor the lifecycle
+    of an import job.
+
+Fields:
+    - supplier (FK → Supplier): Supplier this run belongs to.
+    - source_type (FK → ImportSourceType): Type of source (e.g., file, API, CSV).
+    - source_file (CharField, 500, optional): Path or identifier of the imported file.
+    - started_at (DateTimeField): Timestamp when the import started.
+    - finished_at (DateTimeField, optional): Timestamp when the import finished.
+    - status (CharField, 20): Run status ("running", "success", "failed").
+    - total_records (IntegerField, optional): Number of raw records fetched.
+    - is_processed (BooleanField): Whether the run has been processed into ERP tables.
+    - processed_at (DateTimeField, optional): Timestamp when records were processed.
+
+Relations:
+    - Supplier → multiple ImportRuns (1:n).
+    - ImportRun → multiple ImportRawRecord (1:n).
+    - ImportRun → multiple ImportErrorLog (1:n).
+
+Used by:
+    - Import pipelines for execution tracking and reporting.
+    - Error logging and auditing mechanisms.
+
+Depends on:
+    - apps.partners.models.Supplier
+    - apps.imports.models.ImportSourceType
+
+Example:
+    >>> from apps.imports.models import ImportRun
+    >>> run = ImportRun.objects.create(
+    ...     supplier=supplier,
+    ...     source_type=source_type,
+    ...     source_file="/imports/supplier_2025-01.csv"
+    ... )
+    >>> print(run)
+    ImportRun 1 — SUPPLIERX at 2025-01-10 12:00
+"""
+
+
 from __future__ import annotations
 from django.db import models
 from django.utils import timezone

@@ -1,5 +1,47 @@
 # apps/procurement/models/supplier_quantity_price.py
-# Created according to the user's permanent Copilot Base Instructions.
+"""
+Purpose:
+    Defines quantity-based price tiers for a supplier’s product.
+    Complements SupplierPrice by enabling stepped pricing models when
+    a single flat price (unit_price) is not sufficient.
+
+Context:
+    Part of the procurement domain. This model allows tiered pricing
+    based on minimum order quantities. For example, buying 100 units
+    may have a lower unit price than buying 10.
+
+Fields:
+    - supplier_price (FK → SupplierPrice): Links to the supplier price header.
+    - min_quantity (DecimalField): Minimum quantity for this tier.
+    - unit_price (DecimalField): Net purchase price per unit (excl. VAT).
+
+Relations:
+    - SupplierPrice → multiple SupplierQuantityPrice (tiers).
+    - SupplierQuantityPrice belongs to exactly one SupplierPrice.
+
+Used by:
+    - Procurement calculations (choosing correct tier for an order).
+    - ERP price imports from suppliers with graduated pricing.
+    - PO line creation when selecting best available tier.
+
+Depends on:
+    - apps.procurement.models.SupplierPrice
+
+Constraints:
+    - Unique per (supplier_price, min_quantity).
+    - Ordered by min_quantity ascending.
+
+Example:
+    >>> from apps.procurement.models import SupplierQuantityPrice
+    >>> tier = SupplierQuantityPrice.objects.create(
+    ...     supplier_price=sp,
+    ...     min_quantity=100,
+    ...     unit_price=9.99,
+    ... )
+    >>> print(tier)
+    100+ → 9.99 (EUR)
+"""
+
 from __future__ import annotations
 
 from django.db import models

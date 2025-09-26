@@ -1,0 +1,6 @@
+
+ ### import komatsu_06-25_short.xlsx
+ ### test import
+
+ python manage.py universal_excel_importer --supplier 70002 --file /home/fjv/work/areman-dj/data/import/komatsu_06-25_short.xlsx
+

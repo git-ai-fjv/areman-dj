@@ -1,5 +1,44 @@
 # apps/procurement/services/supplier_product_ops.py
-# Created according to the user's Copilot Base Instructions.
+"""
+Purpose:
+    Provides operations to safely insert or update SupplierProduct records.
+    Ensures consistent links between Organization, Supplier, and ProductVariant.
+
+Context:
+    Part of the `apps.procurement` app. Encapsulates business logic for
+    managing supplier-specific product definitions.
+
+Used by:
+    - Import pipelines that load supplier catalog data
+    - Procurement services that need to attach variants to suppliers
+    - Synchronization jobs for maintaining supplier SKU references
+
+Depends on:
+    - apps.core.models.Organization
+    - apps.partners.models.Supplier
+    - apps.catalog.models.ProductVariant
+    - apps.procurement.models.SupplierProduct
+    - Django transaction management
+
+Example:
+    from apps.procurement.services.supplier_product_ops import upsert_supplier_product
+
+    payload = {
+        "org_code": 1,
+        "supplier_id": 42,
+        "variant_id": 99,
+        "supplier_sku": "SUP-ART-2025",
+        "pack_size": 10,
+        "min_order_qty": 100,
+        "lead_time_days": 14,
+        "is_active": True,
+        "supplier_description": "10mm Steel Bolts",
+        "notes": "Special pricing valid until 2025-12-31",
+    }
+    sp, created = upsert_supplier_product(payload)
+    print(sp.id, created)
+"""
+
 
 from __future__ import annotations
 

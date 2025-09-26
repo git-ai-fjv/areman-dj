@@ -1,5 +1,38 @@
 # apps/pricing/services/price_list_ops.py
-# Created according to the user's Copilot Base Instructions.
+"""
+Purpose:
+    Service layer providing operations for creating or updating PriceList
+    records from a dictionary payload. Ensures idempotent upserts.
+
+Context:
+    Part of the `apps.pricing` app. Encapsulates business logic for price list
+    management and avoids scattering ORM logic across the project.
+
+Used by:
+    - Management commands that seed or import price lists
+    - Other services or API endpoints dealing with pricing structures
+
+Depends on:
+    - apps.core.models.Organization
+    - apps.core.models.Currency
+    - apps.pricing.models.PriceList
+    - Django transaction handling and ValidationError
+
+Example:
+    from apps.pricing.services.price_list_ops import upsert_price_list
+
+    payload = {
+        "org_code": 1,
+        "price_list_code": "PL01",
+        "kind": "retail",
+        "currency_code": "EUR",
+        "price_list_description": "Retail price list",
+        "is_active": True,
+    }
+    pl, created = upsert_price_list(payload)
+    print(pl, created)
+"""
+
 
 from __future__ import annotations
 

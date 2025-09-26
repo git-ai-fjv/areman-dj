@@ -1,5 +1,52 @@
 # apps/catalog/management/commands/seed_product.py
-# Created according to the user's Copilot Base Instructions.
+
+# apps/catalog/management/commands/seed_product.py
+"""
+Purpose:
+    Management command to upsert Product records into the catalog.
+    Accepts colon-delimited items or a file, resolving Organization,
+    Manufacturer, and optional ProductGroup. Ensures products are
+    uniquely identified by either slug or normalized manufacturer
+    part number.
+
+Context:
+    Part of the catalog seeding workflow. Used during system setup
+    and migrations to preload or update product master data across
+    organizations. Ensures consistent slug generation and idempotent
+    product creation.
+
+Used by:
+    - Administrators to seed or bulk-update products.
+    - Import/ETL pipelines when syncing product data from ERP or supplier feeds.
+    - Developers to quickly populate test data during local development.
+
+Depends on:
+    - apps.core.models.organization.Organization (organization resolution).
+    - apps.catalog.models.manufacturer.Manufacturer (required foreign key).
+    - apps.catalog.models.product_group.ProductGroup (optional grouping).
+    - apps.catalog.models.product.Product (target table).
+    - Utility functions for slug normalization and uniqueness.
+
+Key Features:
+    - Parses flexible colon-delimited format:
+      org_code:manufacturer_code:mpn[:name][:slug][:product_group_code][:active]
+    - Auto-generates slug if omitted, enforcing uniqueness per organization.
+    - Normalizes MPNs for fallback matching (lowercased, umlaut replacements, non-alnum stripped).
+    - Supports dry-run mode for safe validation.
+    - Uses atomic transactions for batch safety.
+
+Examples:
+    # Dry run with explicit slug
+    python manage.py seed_product --items "1:10:ZX-9:Widget ZX-9:widget-zx-9:GRP01:1" --dry-run
+
+    # Apply simple records with and without group/slug
+    python manage.py seed_product --items "1:10:ZX-9:Widget ZX-9:::1,1:10:MPN-123::::0"
+
+    # Load from file
+    python manage.py seed_product --file scripts/products.txt
+"""
+
+
 # example:
 # python manage.py seed_product --items "1:10:ZX-9:Widget ZX-9:widget-zx-9:GRP01:1,1:10:MPN-123::::GRP01:0,1:11:ABC-42:Cool Part::GRP02:"
 

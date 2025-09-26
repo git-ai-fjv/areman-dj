@@ -1,5 +1,37 @@
 # apps/catalog/management/commands/seed_channel.py
-# Created according to the user's Copilot Base Instructions.
+"""
+Purpose:
+    Management command to upsert (create or update) sales channels such as Webshop,
+    Amazon, or POS. Reads colon-delimited input from CLI arguments or a file and
+    ensures Channel rows exist in the database.
+
+Context:
+    Belongs to the catalog app. Provides an easy way to seed or update available
+    sales channels without manually editing the database. Useful for initial setup
+    or bulk updates of organization-specific sales channels.
+
+Used by:
+    - Administrators during project setup (seeding initial channels).
+    - CI/CD or deployment scripts to ensure base channels are present.
+    - Developers or support staff who need to add/update channels quickly.
+
+Depends on:
+    - apps.core.models.Organization (for org resolution by org_code).
+    - apps.core.models.Currency (for base currency validation).
+    - apps.catalog.models.Channel (the actual target table).
+    - Django transaction handling and management command framework.
+
+Example:
+    # Seed channels from file
+    python manage.py seed_channel --file scripts/channels.txt
+
+    # Seed channels inline via CLI
+    python manage.py seed_channel --items "1:WEB:Webshop:shop:EUR:1,1:AMZ:Amazon:marketplace:EUR:1"
+
+    # Dry-run (no DB changes, only validate and print results)
+    python manage.py seed_channel --items "1:POS:Point of Sale::EUR:" --dry-run
+"""
+
 from __future__ import annotations
 
 import logging

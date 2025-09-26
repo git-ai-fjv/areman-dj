@@ -1,6 +1,34 @@
 #!/usr/bin/env python3
+
 # apps/imports/management/commands/seed_import_defaults.py
-# Created according to the user's permanent Copilot Base Instructions.
+"""
+Purpose:
+    Management command to seed an `ImportGlobalDefaultSet` with related
+    `ImportGlobalDefaultLine` entries. Ensures organizations have baseline
+    default mappings for import processing.
+
+Context:
+    Part of the `apps.imports` app. Used during system setup or onboarding
+    to initialize import defaults for a given organization.
+
+Used by:
+    - Developers and operators via `python manage.py seed_import_defaults`
+    - Import processing logic that relies on a default set of rules
+
+Depends on:
+    - apps.core.models.organization.Organization
+    - apps.imports.services.import_defaults_ops.seed_initial_defaults
+    - Django management command framework
+
+Example:
+    # Seed defaults for first organization (today as valid_from)
+    python manage.py seed_import_defaults
+
+    # Seed defaults for organization 1, with explicit date
+    python manage.py seed_import_defaults --org 1 --valid-from 2025-01-01
+"""
+
+
 
 from __future__ import annotations
 

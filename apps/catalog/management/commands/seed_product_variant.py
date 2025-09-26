@@ -1,5 +1,55 @@
 # apps/catalog/management/commands/seed_product_variant.py
-# Created according to the user's Copilot Base Instructions.
+
+# apps/catalog/management/commands/seed_product_variant.py
+"""
+Purpose:
+    Management command to upsert ProductVariant records (SKUs) in the catalog.
+    Ensures consistent variant data including SKU, barcode, packing, origin,
+    state, customs code, weight, and active status.
+
+Context:
+    Part of the catalog seeding/import pipeline. Variants are the sellable units
+    tied to a Product and enriched with physical/logistic attributes. This command
+    allows bulk initialization and safe re-runs (idempotent upserts).
+
+Used by:
+    - Admins or ETL scripts during catalog import.
+    - Developers/testers preparing demo product data.
+    - Integration jobs syncing SKUs from external ERP/PIM systems.
+
+Depends on:
+    - apps.core.models.organization.Organization
+    - apps.catalog.models.product.Product
+    - apps.catalog.models.product_variant.ProductVariant
+    - apps.catalog.models.packing.Packing
+    - apps.catalog.models.origin.Origin
+    - apps.catalog.models.state.State
+
+Key Features:
+    - Colon-delimited input with up to 10 fields:
+      org:product_id:sku[:barcode][:packing][:origin][:state][:customs][:weight][:active]
+    - Default values if omitted:
+        packing=2, origin='E', state='A', customs=0, weight=0, active=True.
+    - Validation for lengths (SKU ≤120, barcode ≤64, codes length=1).
+    - Reference checks: org, product, packing, origin, and state must exist.
+    - Upsert strategy:
+        1) Match by (organization, sku).
+        2) Fallback: (organization, product, packing, origin, state).
+    - Dry-run mode to validate input without applying changes.
+    - Transactional safety.
+
+Examples:
+    # Minimal SKU with defaults
+    python manage.py seed_product_variant --items "1:1001:SKU-123"
+
+    # Full variant with explicit attributes
+    python manage.py seed_product_variant --items "1:1001:SKU-124:4006381333931:2:E:A:0:0.250:1"
+
+    # From file
+    python manage.py seed_product_variant --file scripts/variants.txt
+"""
+
+
 from __future__ import annotations
 
 import logging

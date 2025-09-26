@@ -1,4 +1,48 @@
 # apps/imports/models/import_global_default_line.py
+"""
+Purpose:
+    Represents a single line entry within a global default set for imports.
+    Each line maps a target field path to a default value, optionally with
+    a transform and enforced datatype.
+
+Context:
+    Belongs to the imports domain. Used when building base dictionaries of
+    defaults (e.g., for products, variants, suppliers) before mapping raw
+    import data. Provides consistent fallback values across an organization.
+
+Fields:
+    - set (FK → ImportGlobalDefaultSet): The owning default set.
+    - target_path (CharField, 255): Path of the field (e.g., "product.name").
+    - default_value (JSONField): The fallback value for this path.
+    - transform (FK → ImportTransformType): Optional transform to apply.
+    - is_required (BooleanField): Whether the field must be present.
+    - target_datatype (FK → ImportDataType): Defines the expected datatype.
+
+Relations:
+    - ImportGlobalDefaultSet → multiple ImportGlobalDefaultLine
+    - ImportTransformType → multiple ImportGlobalDefaultLine
+    - ImportDataType → multiple ImportGlobalDefaultLine
+
+Used by:
+    - apps/imports/services/defaults.py (build_base_dict, applying defaults)
+
+Depends on:
+    - apps.imports.models.import_global_default_set.ImportGlobalDefaultSet
+    - apps.imports.models.import_data_type.ImportDataType
+    - apps.imports.models.import_transform_type.ImportTransformType
+
+Example:
+    >>> from apps.imports.models import ImportGlobalDefaultLine
+    >>> line = ImportGlobalDefaultLine.objects.create(
+    ...     set=default_set,
+    ...     target_path="product.state_code",
+    ...     default_value="active",
+    ...     target_datatype=dt_str
+    ... )
+    >>> print(line)
+    product.state_code = active
+"""
+
 
 from __future__ import annotations
 from django.db import models

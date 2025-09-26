@@ -1,6 +1,30 @@
 #!/usr/bin/env python3
+
 # apps/core/management/commands/seed_organization.py
-# Created according to the user's permanent Copilot Base Instructions.
+"""
+Purpose:
+    Management command to seed or update Organization rows from colon-delimited
+    input or a file. Supports dry-run validation.
+
+Context:
+    Part of the `core` app. Used during initial setup or data imports to ensure
+    organizations (mandants) exist in the database.
+
+Used by:
+    - Developers and ops during setup via `python manage.py seed_organization`
+    - Other seed commands that require existing Organization rows (e.g. packing,
+      product, product group)
+
+Depends on:
+    - apps.core.models.organization.Organization
+    - Django transaction management
+    - Standard management command infrastructure
+
+Example:
+    python manage.py seed_organization --items "1:Main Org,2:Test Mandant"
+    python manage.py seed_organization --file scripts/organizations.txt
+"""
+
 
 from __future__ import annotations
 

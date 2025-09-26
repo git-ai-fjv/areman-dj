@@ -1,5 +1,55 @@
 # apps/procurement/models/purchase_order.py
-# Created according to the user's permanent Copilot Base Instructions.
+"""
+Purpose:
+    Represents a purchase order created by an organization to procure goods
+    from a supplier. Captures order number, status, currency, and delivery info.
+
+Context:
+    Part of the procurement domain. Purchase orders are used to formalize
+    and track purchasing activities, serving as the header document for
+    ordered items.
+
+Fields:
+    - organization (FK → core.Organization): Owning organization.
+    - supplier (FK → partners.Supplier): Supplier to whom the order is placed.
+    - order_number (CharField, max 30): Unique identifier per organization.
+    - status (CharField, max 20): Workflow state ("draft", "approved", "ordered",
+      "received", "cancelled").
+    - currency (FK → core.Currency): Currency in which the order is placed.
+    - expected_date (DateField, optional): Expected delivery date.
+    - notes (TextField, optional): Freeform remarks.
+    - is_active (BooleanField): Whether the order is currently active.
+    - created_at / updated_at (DateTimeField): Audit timestamps.
+
+Relations:
+    - Organization → multiple PurchaseOrders
+    - Supplier → multiple PurchaseOrders
+    - Currency → multiple PurchaseOrders
+    - To be extended by PurchaseOrderLine for itemized order positions.
+
+Used by:
+    - Procurement workflows to manage supplier orders.
+    - ERP processes for stock, invoicing, and financial reconciliation.
+    - Reporting to track supplier performance and order statuses.
+
+Depends on:
+    - apps.core.models.Organization
+    - apps.core.models.Currency
+    - apps.partners.models.Supplier
+
+Example:
+    >>> from apps.procurement.models import PurchaseOrder
+    >>> po = PurchaseOrder.objects.create(
+    ...     organization=org,
+    ...     supplier=sup,
+    ...     order_number="PO-2025-001",
+    ...     status="draft",
+    ...     currency=eur,
+    ... )
+    >>> print(po)
+    [org=1] PO PO-2025-001 (draft)
+"""
+
 
 from __future__ import annotations
 

@@ -1,5 +1,52 @@
 # apps/catalog/management/commands/seed_product_media.py
-# Created according to the user's Copilot Base Instructions.
+
+# apps/catalog/management/commands/seed_product_media.py
+"""
+Purpose:
+    Management command to upsert ProductMedia entries for products and (optionally)
+    their variants. Supports bulk seeding of images, videos, or other media assets
+    tied to products in the catalog.
+
+Context:
+    Part of the catalog initialization and import workflow. Used to ensure that all
+    products have associated media (gallery, main image, etc.) with consistent metadata.
+    The command is idempotent and can be run repeatedly to sync media state.
+
+Used by:
+    - Admins or ETL scripts importing product catalogs from external sources.
+    - Developers preparing demo/test data.
+    - Synchronization jobs that need to upsert or update product imagery.
+
+Depends on:
+    - apps.core.models.organization.Organization (scoping)
+    - apps.catalog.models.product.Product (target relation)
+    - apps.catalog.models.product_variant.ProductVariant (optional variant relation)
+    - apps.catalog.models.product_media.ProductMedia (main model)
+
+Key Features:
+    - Colon-delimited input with up to 12 fields:
+      org:product_ref:media_url[:role][:sort_order][:alt_text]
+         [:variant_ref][:mime][:width][:height][:file_size][:active]
+    - product_ref: product slug (preferred) or numeric id.
+    - variant_ref: SKU (preferred) or numeric id (optional).
+    - Defaults: role='gallery', sort_order=0, alt_text='', active=True.
+    - Length validation on role (20), alt_text (200), mime (100).
+    - Idempotent upsert via natural key (organization, product, variant, media_url).
+    - Dry-run mode to validate input without DB writes.
+    - Full transaction safety.
+
+Examples:
+    # Dry run
+    python manage.py seed_product_media --items "1:widget-a:https://cdn/img1.jpg:main:0:Front" --dry-run
+
+    # From file
+    python manage.py seed_product_media --file scripts/product_media.txt
+
+    # Mixed with optional fields
+    python manage.py seed_product_media --items "1:widget-a:https://cdn/img2.jpg:gallery:1::SKU-1001:image/jpeg:1200:1200:154000:1"
+"""
+
+
 from __future__ import annotations
 
 import logging

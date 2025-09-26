@@ -1,4 +1,41 @@
+
 # apps/imports/api/elsaesser_filter_client.py
+"""
+Purpose:
+    Implements a dedicated API client for the Filter-Technik (Elsaesser) Shopware 6.6 Store API.
+    Provides authentication, product lookup (by manufacturer number or SKU), and bulk fetch with pagination.
+
+Context:
+    Part of the `imports.api` module. Extends the shared `BaseApiClient`
+    to handle supplier-specific login and product retrieval logic.
+    Used to synchronize or import product master data from the external supplier system.
+
+Used by:
+    - Import pipelines in `apps/imports/services/` (for fetching supplier catalog data)
+    - Management commands for seeding or updating product data
+    - Developers (manual CLI execution in `__main__` for testing integration)
+
+Depends on:
+    - apps.imports.api.api_client_base.BaseApiClient (HTTP logic, headers, error handling)
+    - requests (for HTTP communication)
+    - logging and traceback for error/debug output
+    - Shopware 6.6 Store API (Filter-Technik endpoint)
+
+Example:
+    from apps.imports.api.elsaesser_filter_client import FilterTechnikApiClient
+
+    client = FilterTechnikApiClient(
+        base_url="https://www.filter-technik.de/store-api",
+        access_key="ACCESS_KEY",
+        username="user@example.com",
+        password="secret"
+    )
+    client.login()
+    product = client.get_product_by_sku("SKU-12345")
+    print(product)
+"""
+
+
 from __future__ import annotations
 import uuid
 import logging

@@ -1,5 +1,36 @@
 # apps/imports/services/import_defaults_ops.py
-# Created according to the user's permanent Copilot Base Instructions.
+"""
+Purpose:
+    Service functions to create and manage ImportGlobalDefaultSet and
+    ImportGlobalDefaultLine entries. Provides helpers for seeding a
+    baseline of default values used during the import pipeline.
+
+Context:
+    Part of the `apps.imports.services` package.
+    Encapsulates default handling logic so that management commands
+    (e.g. seed_import_defaults) can reuse it consistently.
+
+Used by:
+    - apps/imports/management/commands/seed_import_defaults.py
+    - Any future import pipelines requiring baseline defaults
+
+Depends on:
+    - apps.imports.models.import_global_default_set.ImportGlobalDefaultSet
+    - apps.imports.models.import_global_default_line.ImportGlobalDefaultLine
+    - apps.imports.models.import_data_type.ImportDataType
+    - apps.core.models.organization.Organization
+    - Django transaction management
+
+Example:
+    from apps.imports.services import import_defaults_ops as ops
+    from apps.core.models.organization import Organization
+    from datetime import date
+
+    org = Organization.objects.first()
+    default_set, created = ops.seed_initial_defaults(org, date.today())
+    print(default_set.id, created)
+"""
+
 
 from __future__ import annotations
 

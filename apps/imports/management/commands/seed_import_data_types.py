@@ -1,6 +1,29 @@
 #!/usr/bin/env python3
 # apps/imports/management/commands/seed_import_data_types.py
-# Created according to the user's permanent Copilot Base Instructions.
+"""
+Purpose:
+    Management command to seed default data types (str, int, decimal, bool, date, datetime)
+    into the `ImportDataType` table. Ensures the system has the required baseline
+    for describing import field types.
+
+Context:
+    Part of the `apps.imports` app. Used during initial setup or migrations
+    to populate the database with standard import data types.
+
+Used by:
+    - Developers (manual execution via `python manage.py seed_import_data_types`)
+    - Initial project setup scripts
+    - Any process that relies on consistent `ImportDataType` definitions
+
+Depends on:
+    - apps.imports.models.import_data_type.ImportDataType
+    - Django management command framework
+
+Example:
+    # Seed default data types
+    python manage.py seed_import_data_types
+"""
+
 
 from __future__ import annotations
 

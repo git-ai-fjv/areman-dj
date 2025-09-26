@@ -1,5 +1,52 @@
 # apps/catalog/services/product_ops.py
-# Created according to the user's Copilot Base Instructions.
+
+# apps/catalog/services/product_ops.py
+"""
+Purpose:
+    Service layer for managing Product records. Provides a transactional,
+    idempotent upsert function that enforces business keys and validates
+    references to related entities.
+
+Context:
+    A Product represents a catalog entry tied to an Organization,
+    Manufacturer, and optionally a ProductGroup. This service is designed
+    to be used by import pipelines, admin features, or API endpoints to
+    safely create or update product records.
+
+Used by:
+    - Seeding commands for products.
+    - Import/ETL jobs that sync manufacturer data into the catalog.
+    - Admin operations and APIs that create/update product definitions.
+
+Depends on:
+    - apps.core.models.Organization
+    - apps.catalog.models.Manufacturer
+    - apps.catalog.models.ProductGroup
+    - apps.catalog.models.Product
+
+Key Features:
+    - Atomic upsert by (organization, manufacturer, manufacturer_part_number, slug).
+    - Resolves foreign keys (Organization, Manufacturer, ProductGroup).
+    - Enforces required fields: org_code, manufacturer_code,
+      manufacturer_part_number, name, slug.
+    - Optional fields: product_group_code, is_active.
+    - Raises ValidationError for missing required fields.
+
+Example:
+    >>> from apps.catalog.services.product_ops import upsert_product
+    >>> payload = {
+    ...     "org_code": 1,
+    ...     "manufacturer_code": 10,
+    ...     "manufacturer_part_number": "ZX-9",
+    ...     "name": "Widget ZX-9",
+    ...     "slug": "widget-zx-9",
+    ...     "product_group_code": "GRP01",
+    ...     "is_active": True,
+    ... }
+    >>> p, created = upsert_product(payload)
+    >>> print(p.id, created)
+"""
+
 from __future__ import annotations
 
 from typing import Dict, Tuple, Optional

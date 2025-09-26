@@ -1,5 +1,57 @@
 # apps/catalog/services/variant_ops.py
-# Created according to the user's Copilot Base Instructions.
+"""
+Purpose:
+    Service layer for managing ProductVariant records. Provides a transactional,
+    idempotent upsert function that supports both SKU-based and business-key–
+    based selectors for flexible variant creation and updates.
+
+Context:
+    A ProductVariant (SKU) represents a specific sellable unit of a Product.
+    Variants may differ by packing, origin, state, customs code, or barcode.
+    This service abstracts the variant creation/update logic to enforce
+    consistent handling across imports, admin features, and APIs.
+
+Used by:
+    - Import/ETL pipelines that generate or update SKUs.
+    - Seeding scripts for initial data population.
+    - Business logic that maintains catalog consistency.
+
+Depends on:
+    - apps.core.models.Organization
+    - apps.catalog.models.Product
+    - apps.catalog.models.ProductVariant
+    - apps.catalog.models.Packing
+    - apps.catalog.models.Origin
+    - apps.catalog.models.State
+
+Key Features:
+    - Required fields: org_code, product_id.
+    - Preferred selector: (org, sku).
+    - Alternative selector: (org, product, packing, origin, state).
+    - Generates a fallback SKU when not provided.
+    - Resolves references to Packing, Origin, and State if codes are supplied.
+    - Atomic transaction guarantees idempotency and consistency.
+    - Raises ValidationError for missing required fields.
+
+Example:
+    >>> from apps.catalog.services.variant_ops import upsert_variant
+    >>> payload = {
+    ...     "org_code": 1,
+    ...     "product_id": 1001,
+    ...     "sku": "SKU-123",
+    ...     "barcode": "4006381333931",
+    ...     "packing_code": 2,
+    ...     "origin_code": "E",
+    ...     "state_code": "A",
+    ...     "customs_code": 0,
+    ...     "weight": "0.250",
+    ...     "is_active": True,
+    ... }
+    >>> v, created = upsert_variant(payload)
+    >>> print(v.id, created)
+"""
+
+
 from __future__ import annotations
 
 from decimal import Decimal

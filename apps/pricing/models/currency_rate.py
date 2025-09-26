@@ -1,24 +1,43 @@
-# Created according to the user's Copilot Base Instructions.
+# apps/core/models/currency_rate.py
 """
--- =========================
--- TABLE: currency_rate
--- =========================
-CREATE TABLE public.currency_rate (
-  id          BIGSERIAL     PRIMARY KEY NOT NULL,
-  base_code   CHAR(3)       NOT NULL,   -- FK -> currency(code)
-  quote_code  CHAR(3)       NOT NULL,   -- FK -> currency(code)
-  rate        NUMERIC(16,8) NOT NULL,   -- z.B. 1.12345678
-  rate_date   DATE          NOT NULL,   -- Kurs-Datum
-  created_at  TIMESTAMPTZ   NOT NULL DEFAULT statement_timestamp(),
-  updated_at  TIMESTAMPTZ   NOT NULL DEFAULT statement_timestamp(),
-  FOREIGN KEY (base_code)  REFERENCES public.currency (code) ON DELETE NO ACTION,
-  FOREIGN KEY (quote_code) REFERENCES public.currency (code) ON DELETE NO ACTION,
-  CONSTRAINT ck_currency_rate_positive CHECK (rate > 0),
-  CONSTRAINT uniq_currency_rate UNIQUE (base_code, quote_code, rate_date)
-);
-CREATE INDEX idx_currency_rate_date       ON public.currency_rate (rate_date);
-CREATE INDEX idx_currency_rate_base_quote ON public.currency_rate (base_code, quote_code);
+Purpose:
+    Represents daily exchange rates between two currencies.
+    Stores conversion factors (base → quote) with full precision
+    and enforces uniqueness per date.
+
+Context:
+    Part of the core app. Used by pricing, procurement, and reporting
+    to convert between currencies for transactions and analytics.
+
+Fields:
+    - base (FK → core.Currency): Base currency of the rate.
+    - quote (FK → core.Currency): Quote currency of the rate.
+    - rate (DecimalField, 16,8): Conversion factor (e.g., 1.12345678).
+    - rate_date (DateField): Date the rate applies to.
+    - created_at / updated_at (DateTimeField): Audit timestamps.
+
+Relations:
+    - Currency (base) → multiple CurrencyRates
+    - Currency (quote) → multiple CurrencyRates
+
+Used by:
+    - Pricing and ERP calculations
+    - Reports requiring currency normalization
+    - Procurement processes involving multi-currency suppliers
+
+Depends on:
+    - apps.core.models.Currency
+    - Django ORM (constraints, validators)
+
+Example:
+    >>> from apps.core.models import CurrencyRate, Currency
+    >>> usd = Currency.objects.get(code="USD")
+    >>> eur = Currency.objects.get(code="EUR")
+    >>> cr = CurrencyRate.objects.create(base=usd, quote=eur, rate="0.92345678", rate_date="2025-09-26")
+    >>> print(cr)
+    USD/EUR @ 0.92345678 (2025-09-26)
 """
+
 from __future__ import annotations
 
 from django.db import models

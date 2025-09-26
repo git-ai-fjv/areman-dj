@@ -1,6 +1,41 @@
 # apps/catalog/management/commands/seed_product_group.py
 #!/usr/bin/env python3
-# Created according to the user's permanent Copilot Base Instructions.
+# apps/catalog/management/commands/seed_product_group.py
+"""
+Purpose:
+    Management command to upsert ProductGroup records by (organization, product_group_code).
+    Enables seeding and maintaining product groups per organization in a consistent, idempotent way.
+
+Context:
+    Part of the catalog seeding workflow. Used during initial setup, imports, or
+    synchronization steps to define or adjust logical product groupings (e.g. Hardware,
+    Accessories, No group).
+
+Used by:
+    - Administrators when bootstrapping catalog structures.
+    - ETL/import processes that need to ensure required product groups exist.
+    - Developers when preparing test data for local development.
+
+Depends on:
+    - apps.core.models.organization.Organization (for org scoping).
+    - apps.catalog.models.product_group.ProductGroup (target model).
+
+Key Features:
+    - Accepts colon-delimited items: org_code:product_group_code[:description].
+    - Supports empty product_group_code to represent “no group”.
+    - Validates code length (max 20 chars) and description length (max 200 chars).
+    - Idempotent upsert via `update_or_create`.
+    - Supports dry-run mode for safe validation.
+    - Runs inside an atomic transaction for batch safety.
+
+Examples:
+    # Dry run
+    python manage.py seed_product_group --items "1:GRP01:Hardware,1::No group" --dry-run
+
+    # Apply changes
+    python manage.py seed_product_group --items "1:GRP01:Hardware,1::No group"
+"""
+
 from __future__ import annotations
 
 import logging

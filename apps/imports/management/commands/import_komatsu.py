@@ -1,6 +1,42 @@
 #!/usr/bin/env python3
+
 # apps/imports/management/commands/import_komatsu.py
-# Created according to the user's permanent Copilot Base Instructions.
+"""
+Purpose:
+    Management command to import Komatsu product data from Excel files into
+    `ImportRun` and `ImportRawRecord`. Supports both automatic detection of
+    the newest file and explicit file path overrides.
+
+Context:
+    Part of the `apps.imports` app. Runs as a Django management command.
+    Used to bring supplier Excel catalogs into the import pipeline, with
+    validation and dry-run support.
+
+Used by:
+    - Developers (manual execution via `python manage.py import_komatsu`)
+    - Automated import jobs (scheduled data ingestion)
+    - Downstream processing tasks that consume `ImportRun` and `ImportRawRecord`
+
+Depends on:
+    - pandas (Excel parsing)
+    - apps.imports.models.ImportRun (import session tracking)
+    - apps.imports.models.ImportRawRecord (raw Excel rows storage)
+    - apps.imports.models.ImportSourceType (to classify source type)
+    - apps.partners.models.Supplier (supplier reference)
+    - Django transaction management and logging
+
+Example:
+    # Auto-detect newest file and import
+    python manage.py import_komatsu --supplier SUPP01
+
+    # Dry run (preview up to 20 rows, no DB changes)
+    python manage.py import_komatsu --supplier SUPP01 --dry-run
+
+    # Import specific file
+    python manage.py import_komatsu --supplier SUPP01 --file apps/imports/data/SUPP01/2025/08/komatsu_06-25.xlsx
+"""
+
+
 
 from __future__ import annotations
 

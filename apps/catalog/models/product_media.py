@@ -1,6 +1,58 @@
-# apps/catalog/models/product_media.py
-# Created according to the user's Copilot Base Instructions.
 
+# apps/catalog/models/product_media.py
+"""
+Purpose:
+    Stores media assets (images, videos, documents) for products and variants.
+    Each entry represents one media file with metadata, linked either to a
+    Product or to a specific ProductVariant.
+
+Context:
+    Part of the `catalog` app. Used to manage product images, thumbnails,
+    and other media for display in shop systems and marketplaces.
+
+Fields:
+    - id (BigAutoField): Primary key.
+    - organization (FK → core.Organization): Owner of the media record.
+    - product (FK → catalog.Product): Product to which this media belongs.
+    - variant (FK → catalog.ProductVariant, optional): Specific variant if media
+      is variant-specific; otherwise null.
+    - role (CharField, 20): Media role (e.g., "gallery", "thumbnail").
+    - sort_order (SmallIntegerField): Ordering within the role group.
+    - alt_text (CharField, 200): Alternative text for accessibility/SEO.
+    - media_url (TextField): URL to the media file (e.g., CDN link).
+    - mime (CharField, 100): MIME type if available (e.g., image/jpeg).
+    - width_px / height_px (IntegerField): Dimensions of the media (optional).
+    - file_size (IntegerField): File size in bytes (optional).
+    - is_active (BooleanField): Active flag for filtering.
+    - created_at / updated_at (DateTimeField): Audit timestamps.
+
+Relations:
+    - Organization → multiple ProductMedia
+    - Product → multiple ProductMedia
+    - ProductVariant → multiple ProductMedia (optional)
+
+Used by:
+    - apps.catalog.models.Product (reverse FK)
+    - apps.catalog.models.ProductVariant (reverse FK)
+    - API / frontend layers for rendering product galleries
+
+Depends on:
+    - core.Organization
+    - catalog.Product
+    - catalog.ProductVariant
+
+Example:
+    >>> from apps.catalog.models import ProductMedia
+    >>> pm = ProductMedia.objects.create(
+    ...     organization=org,
+    ...     product=prod,
+    ...     role="gallery",
+    ...     media_url="https://cdn.example.com/img123.jpg",
+    ...     alt_text="Front view of the product"
+    ... )
+    >>> print(pm)
+    [org=1] product=123 gallery #1
+"""
 
 
 from __future__ import annotations

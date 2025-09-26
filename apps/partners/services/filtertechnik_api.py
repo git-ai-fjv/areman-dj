@@ -1,5 +1,34 @@
-# apps/partners/services/filtertechnik_api.py
 #!/usr/bin/env python3
+# apps/partners/services/filtertechnik_api.py
+"""
+Purpose:
+    Service client for interacting with the Filter-Technik (Shopware Store-API).
+    Handles context token retrieval and provides helper methods to fetch product
+    data, e.g. by SKU.
+
+Context:
+    Located in `apps.partners.services`. This client is used by importers and
+    partner integrations to query live product data from the Filter-Technik API.
+
+Used by:
+    - Import commands (e.g., `import_elsaesser`)
+    - Partner services or background jobs needing product lookups
+
+Depends on:
+    - requests (HTTP requests to the Shopware Store-API)
+    - Python stdlib (uuid, traceback)
+
+Example:
+    client = FilterTechnikApiClient(
+        base_url="https://www.filter-technik.de/store-api",
+        access_key="SWSCQU9ZETYXSGPTB2DSAFM2WQ"
+    )
+    client.ensure_context()
+    product = client.get_product_by_sku("12345")
+    print(product)
+"""
+
+
 from __future__ import annotations
 import requests, uuid, traceback
 from typing import Any, Dict, Optional

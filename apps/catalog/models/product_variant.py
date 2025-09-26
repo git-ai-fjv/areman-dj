@@ -1,5 +1,76 @@
+
 # apps/catalog/models/product_variant.py
-# Created according to the user's permanent Copilot Base Instructions.
+"""
+Purpose:
+    Defines the ProductVariant entity, which represents a sellable unit (SKU).
+    Captures identifiers, logistics data, order constraints, availability,
+    and marketing attributes that extend the base Product.
+
+Context:
+    Belongs to the `catalog` app. Each ProductVariant links a Product with
+    its Packing, Origin, and State. Variants are the concrete SKUs used for
+    procurement, pricing, stock, and sales channel operations.
+
+Fields:
+    - organization (FK → core.Organization): Owning organization (multi-tenant scope).
+    - product (FK → catalog.Product): The base product this variant belongs to.
+    - packing (FK → catalog.Packing): Packaging unit of this variant.
+    - origin (FK → catalog.Origin): Origin classification code.
+    - state (FK → catalog.State): State classification code.
+    - sku (CharField, 120): Internal stock-keeping unit identifier.
+    - ean (CharField, 14): Standardized GTIN/EAN code (optional, indexed).
+    - barcode (CharField, 64): Non-standard or supplier barcode (optional).
+    - customs_code (IntegerField): Customs tariff number (optional).
+    - weight / width / height / length (DecimalField): Logistics dimensions.
+    - eclass_code (CharField, 16): International eCl@ss classification (optional).
+    - stock_quantity / available_stock (IntegerField): Stock and availability data.
+    - is_available (BooleanField): Availability flag from supplier API.
+    - shipping_free (BooleanField): Free shipping flag.
+    - min_purchase / max_purchase / purchase_steps (IntegerField): Order constraints.
+    - is_topseller (BooleanField): Marketing flag for top seller status.
+    - is_active (BooleanField): Whether this variant is active.
+    - created_at / updated_at (DateTimeField): Audit timestamps.
+
+Relations:
+    - Organization → multiple ProductVariants
+    - Product → multiple ProductVariants
+    - Packing → multiple ProductVariants
+    - Origin → multiple ProductVariants
+    - State → multiple ProductVariants
+    - ProductVariant ↔ ChannelVariant (publish variants to channels)
+    - ProductVariant ↔ SupplierProduct (procurement linkage)
+
+Used by:
+    - apps.catalog.models.Product
+    - apps.catalog.models.ChannelVariant
+    - apps.procurement.models.SupplierProduct
+    - apps.pricing.models.SalesChannelVariantPrice
+
+Depends on:
+    - core.Organization
+    - catalog.Product
+    - catalog.Packing
+    - catalog.Origin
+    - catalog.State
+
+Example:
+    >>> from apps.catalog.models import ProductVariant
+    >>> pv = ProductVariant.objects.create(
+    ...     organization=org,
+    ...     product=prod,
+    ...     packing=pack,
+    ...     origin=orig,
+    ...     state=state,
+    ...     sku="SKU-123",
+    ...     ean="4006381333931",
+    ...     weight="1.250",
+    ... )
+    >>> print(pv)
+    [org=1] SKU=SKU-123 (product_id=42)
+"""
+
+
+
 from __future__ import annotations
 
 from django.db import models

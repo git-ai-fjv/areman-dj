@@ -1,5 +1,39 @@
 # apps/imports/models/import_data_type.py
-# Created according to the user's permanent Copilot Base Instructions.
+"""
+Purpose:
+    Defines the available datatypes for mapping and transformation during imports.
+    Ensures consistent typing when parsing external data sources into the system.
+
+Context:
+    Part of the `imports` app. Used by the import framework to validate and
+    transform incoming values into the correct Python representation.
+
+Fields:
+    - code (CharField, 30, unique): Short code identifier (e.g., "str", "int", "decimal").
+    - description (CharField, 100): Human-readable label for the type.
+    - python_type (CharField, 50): Python type or handler string (e.g., "decimal.Decimal").
+
+Relations:
+    - No direct foreign keys. Acts as a reference/master table.
+
+Used by:
+    - Import pipeline and mapping services to resolve field datatypes.
+    - Validation logic for ensuring correct type conversion.
+
+Depends on:
+    - Django ORM
+
+Example:
+    >>> from apps.imports.models import ImportDataType
+    >>> t = ImportDataType.objects.create(
+    ...     code="bool",
+    ...     description="Boolean",
+    ...     python_type="bool"
+    ... )
+    >>> print(t)
+    bool (Boolean)
+"""
+
 
 from __future__ import annotations
 from django.db import models

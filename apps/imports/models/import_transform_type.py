@@ -1,5 +1,35 @@
 # apps/imports/models/import_transform_type.py
-# Created according to the user's permanent Copilot Base Instructions.
+"""
+Purpose:
+    Registry of supported transformation functions used in import mapping.
+    Provides a unique code and description for each transform.
+
+Context:
+    Part of the imports domain. Transform types define how raw values
+    from import payloads should be processed before saving.
+
+Fields:
+    - code (CharField, 50, unique): Identifier of the transform (e.g., "uppercase", "int").
+    - description (CharField, 255): Human-readable description of the transformation.
+
+Relations:
+    - ImportTransformType → multiple ImportGlobalDefaultLines (1:n).
+    - ImportTransformType → used in mapping definitions (FKs).
+
+Used by:
+    - ImportGlobalDefaultLine (transform FK).
+    - Mapping and ETL logic to dynamically apply transforms.
+
+Depends on:
+    - Django ORM.
+
+Example:
+    >>> from apps.imports.models import ImportTransformType
+    >>> t = ImportTransformType.objects.create(code="uppercase", description="Convert text to upper case")
+    >>> print(t)
+    uppercase — Convert text to upper case
+"""
+
 
 from __future__ import annotations
 from django.db import models

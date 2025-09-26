@@ -1,5 +1,60 @@
 # apps/partners/models/supplier.py
-# Created according to the user's permanent Copilot Base Instructions.
+"""
+Purpose:
+    Represents supplier master data within an organization.
+    Each supplier is uniquely identified by a supplier code and
+    may include commercial, contact, and logistical information.
+
+Context:
+    Part of the partners app. Suppliers are organizationally scoped
+    entities used for procurement, import mapping, and integrations.
+
+Fields:
+    - organization (FK → core.Organization): Owning organization.
+    - supplier_code (CharField, 20): Unique supplier code per organization.
+    - is_active (BooleanField): Whether the supplier is active.
+    - supplier_description (CharField, 200): Optional description/name.
+    - contact_name (CharField, 100): Primary contact person.
+    - email (CharField, 200): Contact email address.
+    - phone (CharField, 50): Primary phone number.
+    - website (CharField, 200): Website URL.
+    - tax_id (CharField, 50): Tax/VAT identifier.
+    - address_line1 (CharField, 200): Address line 1.
+    - address_line2 (CharField, 200): Address line 2.
+    - postal_code (CharField, 20): Postal/ZIP code.
+    - city (CharField, 100): City name.
+    - country_code (CharField, 2): ISO 3166-1 alpha-2 code.
+    - payment_terms (CharField, 50): Payment term shorthand (e.g., NET30).
+    - is_preferred (BooleanField): Whether marked as preferred supplier.
+    - lead_time_days (SmallIntegerField): Typical lead time in days.
+    - comment (CharField, 200): Optional internal comment.
+    - created_at / updated_at (DateTimeField): Audit timestamps.
+
+Relations:
+    - Organization → multiple Suppliers
+
+Used by:
+    - Procurement workflows
+    - Import mapping (apps/imports)
+    - Inventory and purchase order processing
+
+Depends on:
+    - apps.core.models.Organization
+    - Django ORM
+
+Example:
+    >>> from apps.partners.models import Supplier
+    >>> s = Supplier.objects.create(
+    ...     organization=org,
+    ...     supplier_code="SUP001",
+    ...     supplier_description="MegaParts Ltd.",
+    ...     email="sales@megaparts.com"
+    ... )
+    >>> print(s)
+    SUP001 — MegaParts Ltd.
+"""
+
+
 from __future__ import annotations
 
 from django.db import models

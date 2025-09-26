@@ -1,5 +1,36 @@
 # apps/imports/models/import_source_type.py
-# Created according to the user's permanent Copilot Base Instructions.
+"""
+Purpose:
+    Defines available import source types (e.g., file, API, manual).
+    Serves as a reference table for categorizing import runs and mappings.
+
+Context:
+    Part of the imports domain. Each ImportRun references an ImportSourceType
+    to indicate where the data originated from. Used in mapping and logging.
+
+Fields:
+    - code (CharField, 20, unique): Short identifier (e.g., "file", "api").
+    - description (CharField, 100): Human-readable description.
+
+Relations:
+    - ImportSourceType → multiple ImportRuns (1:n).
+    - ImportSourceType → multiple ImportMapSets (1:n).
+
+Used by:
+    - ImportRun (source_type FK).
+    - ImportMapSet (source_type FK).
+
+Depends on:
+    - Django ORM (constraints, unique checks).
+
+Example:
+    >>> from apps.imports.models import ImportSourceType
+    >>> t = ImportSourceType.objects.create(code="file", description="File Import")
+    >>> print(t)
+    file — File Import
+"""
+
+
 from __future__ import annotations
 from django.db import models
 

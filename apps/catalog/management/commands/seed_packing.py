@@ -1,5 +1,42 @@
 #!/usr/bin/env python3
-# Created according to the user's permanent Copilot Base Instructions.
+
+# apps/catalog/management/commands/seed_packing.py
+"""
+Purpose:
+    Management command to upsert (create or update) Packing records
+    for packaging units such as boxes, pallets, or pieces.
+    Input is colon-delimited and strictly follows the original SQL
+    column order: org_code : packing_code : amount : short_desc [: long_desc].
+
+Context:
+    Part of the catalog app. Provides standardized seeding of packing units
+    across organizations, ensuring that ERP and webshop share the same
+    base packing definitions. Critical for quantity handling and
+    procurement consistency.
+
+Used by:
+    - Administrators to seed initial packing units.
+    - Deployment/support scripts to maintain consistent packing codes.
+    - Developers during testing or setup when new packings are required.
+
+Depends on:
+    - apps.core.models.organization.Organization (FK resolution).
+    - apps.catalog.models.packing.Packing (target table).
+    - Python Decimal for fractional amounts (quantized to 3 decimals).
+    - Django ORM update_or_create for idempotent upserts.
+
+Example:
+    # Dry run (no DB changes)
+    python manage.py seed_packing --items "1:1:1:BX" --dry-run
+
+    # Apply simple packings
+    python manage.py seed_packing --items "1:1:1:BX,1:2:1:piece"
+
+    # Apply with long description
+    python manage.py seed_packing --items "2:30:0.125:PAL:Standard pallet"
+"""
+
+
 from __future__ import annotations
 
 import logging

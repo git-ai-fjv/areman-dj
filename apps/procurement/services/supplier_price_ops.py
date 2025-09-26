@@ -1,5 +1,40 @@
 # apps/procurement/services/supplier_price_ops.py
-# Created according to the user's permanent Copilot Base Instructions.
+"""
+Purpose:
+    Provides safe operations for inserting or updating supplier prices.
+    Ensures that duplicate entries are avoided and price history is maintained
+    by deactivating old records when values change.
+
+Context:
+    Part of the `apps.procurement` app. Encapsulates business logic for
+    supplier price management, keeping importers and synchronization jobs clean.
+
+Used by:
+    - Importers that load supplier price data (CSV, API, Excel)
+    - Procurement workflows updating tiered pricing
+    - Services that manage SupplierProduct cost data
+
+Depends on:
+    - apps.procurement.models.SupplierPrice
+    - apps.procurement.models.SupplierQuantityPrice
+    - django.utils.timezone for timestamp handling
+    - Python's decimal for monetary precision
+
+Example:
+    from decimal import Decimal
+    from apps.procurement.services.supplier_price_ops import SupplierPriceOps
+
+    supplier_product = SupplierProduct.objects.get(id=1)
+    new_price = SupplierPriceOps.upsert_price(
+        supplier_product=supplier_product,
+        currency="EUR",
+        unit_price=Decimal("9.99"),
+        quantity_prices=[(Decimal("10"), Decimal("9.50"))],
+        valid_from=timezone.now().date(),
+    )
+    print(new_price.id, new_price.unit_price)
+"""
+
 
 from __future__ import annotations
 

@@ -1,4 +1,54 @@
-# Created according to the user's permanent Copilot Base Instructions.
+# apps/procurement/models/supplier_price.py
+"""
+Purpose:
+    Represents supplier-specific purchasing price headers. Defines currency,
+    validity ranges, and optional flat prices. Tiered pricing details are
+    maintained in SupplierQuantityPrice.
+
+Context:
+    Part of the procurement domain. SupplierPrice acts as the header for
+    supplier pricing definitions. It ensures each supplier product has
+    structured pricing information that may include validity periods and
+    multiple tiers.
+
+Fields:
+    - supplier_product (FK → procurement.SupplierProduct): The product this
+      supplier price belongs to.
+    - currency (FK → core.Currency): Currency of the price list (ISO 4217).
+    - unit_price (DecimalField, optional): Flat fallback price, without VAT.
+    - min_quantity (DecimalField, optional): Minimum quantity for applying the
+      flat unit price.
+    - valid_from / valid_to (DateField, optional): Validity period of this price.
+    - is_active (BooleanField): Whether this price is currently active.
+    - created_at / updated_at (DateTimeField): Audit timestamps.
+
+Relations:
+    - SupplierProduct → multiple SupplierPrices
+    - SupplierPrice → multiple SupplierQuantityPrices (via related_name="prices")
+    - Currency → multiple SupplierPrices
+
+Used by:
+    - Procurement for cost calculation, supplier integration, and order validation.
+    - ERP workflows that determine applicable purchasing prices.
+
+Depends on:
+    - apps.procurement.models.SupplierProduct
+    - apps.core.models.Currency
+    - apps.procurement.models.SupplierQuantityPrice (child table)
+
+Example:
+    >>> from apps.procurement.models import SupplierPrice
+    >>> sp = SupplierPrice.objects.create(
+    ...     supplier_product=supplier_product,
+    ...     currency=eur,
+    ...     unit_price="12.50",
+    ...     min_quantity="5",
+    ... )
+    >>> print(sp)
+    SP-123 12.50 EUR
+"""
+
+
 from __future__ import annotations
 
 from django.db import models

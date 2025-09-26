@@ -1,6 +1,56 @@
 # apps/partners/models/customer.py
-#!/usr/bin/env python3
-# Created according to the user's permanent Copilot Base Instructions.
+"""
+Purpose:
+    Represents customer master data within an organization.
+    Each customer is uniquely identified by a customer code and
+    may include contact and billing information.
+
+Context:
+    Part of the partners app. Customers are organizationally scoped
+    entities used for sales, invoicing, and integrations.
+
+Fields:
+    - organization (FK → core.Organization): Owning organization.
+    - customer_code (CharField, 20): Unique customer code per organization.
+    - is_active (BooleanField): Flag to indicate if the customer is active.
+    - customer_description (CharField, 200): Optional description/name.
+    - contact_name (CharField, 100): Primary contact person.
+    - email (CharField, 200): Contact email address.
+    - phone (CharField, 50): Primary phone number.
+    - website (CharField, 200): Website URL.
+    - tax_id (CharField, 50): Tax or VAT identifier.
+    - address_line1 (CharField, 200): Address line 1.
+    - address_line2 (CharField, 200): Address line 2.
+    - postal_code (CharField, 20): Postal or ZIP code.
+    - city (CharField, 100): City name.
+    - country_code (CharField, 2): ISO 3166-1 alpha-2 code.
+    - payment_terms (CharField, 50): Payment term shorthand (e.g., NET30).
+    - comment (CharField, 200): Optional internal comment.
+    - created_at / updated_at (DateTimeField): Audit timestamps.
+
+Relations:
+    - Organization → multiple Customers
+
+Used by:
+    - Sales, invoicing, procurement, and integration modules.
+
+Depends on:
+    - apps.core.models.Organization
+    - Django ORM
+
+Example:
+    >>> from apps.partners.models import Customer
+    >>> c = Customer.objects.create(
+    ...     organization=org,
+    ...     customer_code="CUST001",
+    ...     customer_description="ACME Corp",
+    ...     email="contact@acme.com"
+    ... )
+    >>> print(c)
+    CUST001 — ACME Corp
+"""
+
+
 from __future__ import annotations
 
 from django.db import models

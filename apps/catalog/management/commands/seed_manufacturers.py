@@ -1,5 +1,33 @@
 #!/usr/bin/env python3
-# Created according to the user's permanent Copilot Base Instructions.
+# apps/catalog/management/commands/seed_manufacturer.py
+"""
+Purpose:
+    Management command to upsert (create or update) Manufacturer records
+    based on colon-delimited input provided via CLI. Supports dry-run
+    validation without database changes.
+
+Context:
+    Part of the catalog app. Ensures the list of manufacturers is
+    seeded or updated consistently without manual SQL. Useful for
+    initial setup or for bulk adjustments of manufacturer master data.
+
+Used by:
+    - Administrators to seed initial manufacturers.
+    - Support/deployment scripts to keep manufacturer data in sync.
+    - Developers who need to quickly add or adjust manufacturers.
+
+Depends on:
+    - apps.catalog.models.manufacturer.Manufacturer (target table).
+    - Django management command and ORM update_or_create.
+
+Example:
+    # Dry run (no DB changes)
+    python manage.py seed_manufacturer --items "1:ACME,2:Contoso" --dry-run
+
+    # Apply changes
+    python manage.py seed_manufacturer --items "1:ACME,2:Contoso"
+"""
+
 from __future__ import annotations
 
 import logging

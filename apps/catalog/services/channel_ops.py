@@ -1,5 +1,46 @@
 # apps/catalog/services/channel_ops.py
-# Created according to the user's Copilot Base Instructions.
+
+"""
+Purpose:
+    Service layer for managing Channel records in a safe, reusable way.
+    Provides an atomic upsert operation that ensures consistency across
+    organizations and currencies.
+
+Context:
+    Channels represent sales or distribution endpoints (e.g., Webshop, Amazon,
+    Point of Sale) and are always scoped to an organization with a base
+    currency. This service is the programmatic counterpart to the seeding
+    commands and is designed for use by other services, views, or ETL jobs.
+
+Used by:
+    - Import/ETL jobs synchronizing external channel definitions.
+    - Admin features or APIs that create or update channels dynamically.
+    - Test fixtures or bootstrap scripts needing idempotent channel setup.
+
+Depends on:
+    - apps.core.models.Organization
+    - apps.core.models.Currency
+    - apps.catalog.models.Channel
+
+Key Features:
+    - Idempotent upsert by (organization, channel_code).
+    - Enforces required fields: org_code, channel_code, channel_name,
+      base_currency_code.
+    - Validates references to Organization and Currency.
+    - Supports optional fields: kind (default "shop"), is_active (default True).
+    - Trims string lengths to model constraints.
+
+Example:
+    >>> from apps.catalog.services.channel_ops import upsert_channel
+    >>> ch, created = upsert_channel({
+    ...     "org_code": 1,
+    ...     "channel_code": "WEB",
+    ...     "channel_name": "Webshop",
+    ...     "base_currency_code": "EUR"
+    ... })
+    >>> print(ch.id, created)  # channel primary key, created=True/False
+"""
+
 from __future__ import annotations
 from typing import Dict, Tuple
 from django.db import transaction

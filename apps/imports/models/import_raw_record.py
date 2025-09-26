@@ -1,5 +1,55 @@
 # apps/imports/models/import_raw_record.py
-# Created according to the user's permanent Copilot Base Instructions.
+"""
+Purpose:
+    Stores raw unmodified data from supplier or customer imports. Acts as the
+    first persistence layer for payloads before transformation or validation.
+
+Context:
+    Belongs to the imports domain. Each ImportRawRecord links to an ImportRun
+    and captures a single line/item from the input (JSON, XML, CSV, etc.).
+    Used for auditing, debugging, error handling, and retries.
+
+Fields:
+    - import_run (FK → ImportRun): The import run this record belongs to.
+    - line_number (IntegerField): Sequential number within the run (starting at 1).
+    - payload (JSONField): Full raw payload from the external source.
+    - supplier_product_reference (CharField, 255, optional): Supplier’s identifier
+      (SKU, part number) for fast lookup.
+    - product_is_imported / price_is_imported (BooleanField): Flags whether
+      this record was successfully imported into ERP/price tables.
+    - product_imported_at / price_imported_at (DateTimeField, optional): Timestamps
+      for successful imports.
+    - is_product_import_error / is_price_import_error (BooleanField): Flags whether
+      import attempts failed.
+    - error_message_product_import / error_message_price_import (TextField, optional):
+      Detailed error messages for failed imports.
+    - retry_count_product_import / retry_count_price_import (PositiveIntegerField):
+      Number of retries attempted for this record.
+
+Relations:
+    - ImportRun → multiple ImportRawRecord (1:n).
+
+Used by:
+    - Import pipelines for auditing, retry handling, and debugging.
+    - Error logging/reporting systems.
+
+Depends on:
+    - apps.imports.models.ImportRun
+
+Example:
+    >>> from apps.imports.models import ImportRawRecord, ImportRun
+    >>> run = ImportRun.objects.first()
+    >>> rec = ImportRawRecord.objects.create(
+    ...     import_run=run,
+    ...     line_number=1,
+    ...     payload={"Part Number": "X123", "Price": "12.50"},
+    ...     supplier_product_reference="X123",
+    ... )
+    >>> print(rec)
+    Run 1, line 1, ref=X123
+"""
+
+
 from __future__ import annotations
 from django.db import models
 from django.utils import timezone

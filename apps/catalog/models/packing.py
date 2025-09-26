@@ -1,5 +1,52 @@
 #!/usr/bin/env python3
-# Created according to the permanently stored Copilot Base Instructions.
+
+# apps/catalog/models/packing.py
+"""
+Purpose:
+    Define packaging unit master data within an organization.
+    Each record specifies how items are packed (e.g., single piece,
+    box of 10, pallet), including codes, multipliers, and descriptions.
+
+Context:
+    Part of the `catalog` app. Used in product and procurement workflows
+    to enforce packaging rules for ordering, stock management, and logistics.
+
+Fields:
+    - id (AutoField): Surrogate primary key (SERIAL in SQL).
+    - organization (FK → core.Organization): Owning organization,
+      ensures tenant isolation.
+    - packing_code (SmallIntegerField): Business code identifying
+      the packing unit within an organization.
+    - amount (DecimalField, NUMERIC(10,3)): Multiplier for this unit
+      (default 1.000, e.g. "box of 10").
+    - packing_short_description (CharField, max 20): Short label for display.
+    - packing_description (CharField, max 200): Longer optional description.
+
+Relations:
+    - Organization → multiple Packing definitions.
+    - Referenced by ProductVariant or Procurement models for correct packaging
+      and order handling.
+
+Used by:
+    - Catalog (ProductVariant definition)
+    - Procurement (ordering logic, minimum order units)
+
+Depends on:
+    - Django ORM
+    - core.Organization
+
+Example:
+    >>> from apps.catalog.models import Packing
+    >>> Packing.objects.create(
+    ...     organization=org,
+    ...     packing_code=10,
+    ...     amount=Decimal("10.000"),
+    ...     packing_short_description="Box of 10",
+    ... )
+    <Packing: 10 — Box of 10>
+"""
+
+
 from __future__ import annotations
 
 from decimal import Decimal

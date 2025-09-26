@@ -1,5 +1,35 @@
 #!/usr/bin/env python3
-# Created according to the user's permanent Copilot Base Instructions.
+
+# apps/catalog/management/commands/seed_origin.py
+"""
+Purpose:
+    Management command to upsert (create or update) Origin records
+    that classify product origin using a single-character code.
+    Input is provided as colon-delimited items (code:description).
+
+Context:
+    Part of the catalog app. Ensures valid product origin codes (E, N, …)
+    exist in the database for classification. Used during project setup
+    or whenever new origin codes must be added/updated.
+
+Used by:
+    - Administrators to seed initial origin codes.
+    - Deployment/support scripts for maintaining standardized origin values.
+    - Developers who need to quickly add or update product origin definitions.
+
+Depends on:
+    - apps.catalog.models.origin.Origin (target table).
+    - Django management command and ORM update_or_create.
+
+Example:
+    # Dry run (no DB changes)
+    python manage.py seed_origin --items "E:EU,N:Non-EU" --dry-run
+
+    # Apply changes
+    python manage.py seed_origin --items "E:EU,N:Non-EU"
+"""
+
+
 from __future__ import annotations
 
 import logging

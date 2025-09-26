@@ -1,0 +1,53 @@
+# <relative/path/to/file.py>
+"""
+Purpose:
+    [Kurze, 2–3 Zeilen Beschreibung, wofür die Datei da ist.]
+
+Context:
+    [In welchem Modul/App wird die Datei verwendet?
+     Welche Rolle spielt sie im Gesamtprojekt?]
+
+Used by:
+    [Liste von Services, Commands oder Modulen, die diese Datei direkt nutzen.]
+
+Depends on:
+    [Wichtige interne/ externe Abhängigkeiten (z. B. Modelle, Services, Third-Party Libs).]
+
+Example:
+    [Optional – ein Mini-Codebeispiel für die Hauptfunktion.]
+"""
+
+
+################# Template fuer modell:
+
+# <relative/path/to/model.py>
+"""
+Purpose:
+    [Kurze 2–3 Zeilen Beschreibung, was dieses Modell repräsentiert und wofür es gedacht ist.]
+
+Context:
+    [In welchem App-Modul wird das Modell genutzt? Welche Rolle spielt es
+    im Gesamtprojekt oder im Geschäftsprozess?]
+
+Fields:
+    - <field_name> (<type>): [Beschreibung]
+    - <field_name> (<type>): [Beschreibung]
+    - ...
+    [Alle relevanten Felder kurz erklären – inkl. FKs und Constraints]
+
+Relations:
+    - [Erklärung der wichtigsten Relationen: 1:n, n:m, etc.]
+
+Used by:
+    - [Services, Commands, oder andere Modelle, die direkt mit diesem Modell arbeiten]
+
+Depends on:
+    - [Interne Abhängigkeiten wie andere Modelle]
+    - [Externe Abhängigkeiten wie Third-Party-APIs oder spezielle Libraries]
+
+Example:
+    >>> from <app>.models import <ModelName>
+    >>> <ModelName>.objects.filter(...)
+    [Zeige ein kleines Query- oder Anwendungsbeispiel]
+"""
+

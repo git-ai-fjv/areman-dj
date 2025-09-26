@@ -1,5 +1,44 @@
-#!/usr/bin/env python3
-# Created according to the user's permanent Copilot Base Instructions.
+# apps/pricing/models/price_group.py
+"""
+Purpose:
+    Represents a logical grouping of prices within an organization.
+    Allows categorization of product or customer prices into groups
+    such as retail, wholesale, or special contract pricing.
+
+Context:
+    Belongs to the pricing domain. PriceGroups are used to define
+    customer-specific or organization-specific pricing structures.
+
+Fields:
+    - organization (FK → core.Organization): The owning organization.
+    - price_group_code (CharField, max 20): Unique code per organization.
+    - price_group_description (CharField, max 200): Optional descriptive name.
+
+Relations:
+    - Organization → multiple PriceGroups
+    - Referenced by PriceList or SalesChannelVariantPrice
+      to determine applicable prices.
+
+Used by:
+    - Pricing logic for ERP/shops
+    - Import routines that map supplier/customer pricing
+    - Reporting modules for analyzing price segmentation
+
+Depends on:
+    - apps.core.models.Organization
+
+Example:
+    >>> from apps.pricing.models import PriceGroup
+    >>> pg = PriceGroup.objects.create(
+    ...     organization=org,
+    ...     price_group_code="WHOLESALE",
+    ...     price_group_description="Wholesale customer pricing"
+    ... )
+    >>> print(pg)
+    WHOLESALE — Wholesale customer pricing
+"""
+
+
 from __future__ import annotations
 from django.db import models
 

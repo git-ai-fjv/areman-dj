@@ -1,5 +1,39 @@
 # apps/partners/services/supplier_ops.py
-# Created according to the user's Copilot Base Instructions.
+"""
+Purpose:
+    Service functions to upsert (create or update) Supplier records in the database.
+    Encapsulates supplier persistence logic in a reusable API for other services.
+
+Context:
+    Located in `apps.partners.services`. Provides write-access operations on the
+    Supplier model, independent of management commands or imports.
+
+Used by:
+    - Seed commands (e.g., `seed_suppliers`)
+    - Import services or pipelines that create/update suppliers
+    - Potential API endpoints for supplier administration
+
+Depends on:
+    - apps.core.models.Organization
+    - apps.partners.models.Supplier
+    - Django transaction management and ValidationError
+
+Example:
+    from apps.partners.services.supplier_ops import upsert_supplier
+
+    payload = {
+        "org_code": 1,
+        "supplier_code": "SUP-1001",
+        "supplier_description": "Main Widgets Supplier",
+        "email": "contact@widgets.example",
+        "phone": "+49-123-456789",
+        "is_preferred": True,
+        "lead_time_days": 14,
+    }
+    supplier, created = upsert_supplier(payload)
+    print(f"Supplier: {supplier}, created={created}")
+"""
+
 
 from __future__ import annotations
 

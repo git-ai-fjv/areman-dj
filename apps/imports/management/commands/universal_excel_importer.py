@@ -1,6 +1,35 @@
 #!/usr/bin/env python3
+
 # apps/imports/management/commands/universal_excel_importer.py
-# Created according to the user's permanent Copilot Base Instructions.
+"""
+Purpose:
+    Generic Excel importer that loads spreadsheet rows into ImportRawRecord.
+    Performs no field mapping — it only stores cleaned raw rows as JSON for later
+    supplier-specific transformation.
+
+Context:
+    Part of the `apps.imports` app. Used to handle bulk uploads of supplier Excel files
+    and to initialize raw import runs in a standardized way.
+
+Used by:
+    - Operators via `python manage.py universal_excel_importer`
+    - Downstream import pipeline services that map raw records to business objects
+
+Depends on:
+    - apps.imports.models.import_run.ImportRun
+    - apps.imports.models.import_raw_record.ImportRawRecord
+    - apps.imports.models.import_source_type.ImportSourceType
+    - apps.partners.models.supplier.Supplier
+    - pandas for reading Excel files
+
+Example:
+    # Preview 20 rows without persisting them
+    python manage.py universal_excel_importer --supplier SUPP01 --dry-run
+
+    # Import the latest Excel file for a supplier
+    python manage.py universal_excel_importer --supplier SUPP01
+"""
+
 
 from __future__ import annotations
 

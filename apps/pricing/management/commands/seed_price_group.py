@@ -1,5 +1,30 @@
 #!/usr/bin/env python3
-# Created according to the user's permanent Copilot Base Instructions.
+
+# apps/pricing/management/commands/seed_price_groups.py
+"""
+Purpose:
+    Management command to upsert PriceGroup records into the database from a
+    colon-delimited string. Supports dry-run mode for validation.
+
+Context:
+    Part of the `apps.pricing` app. Provides a simple seeding mechanism for
+    organizations’ price groups via the Django management interface.
+
+Used by:
+    - Initial data setup (seeding default or test price groups)
+    - Automated deployment or import pipelines where price groups must exist
+
+Depends on:
+    - apps.core.models.Organization
+    - apps.pricing.models.PriceGroup
+    - Django BaseCommand, transaction handling, CommandError
+
+Example:
+    python manage.py seed_price_groups --items "1:PG01:Retail,1::No group"
+    python manage.py seed_price_groups --items "1:PG01:Retail" --dry-run
+"""
+
+
 from __future__ import annotations
 
 import logging

@@ -1,5 +1,53 @@
 # apps/pricing/models/sales_channel_variant_price.py
-# Created according to the user's Copilot Base Instructions.
+"""
+Purpose:
+    Represents the price of a specific ChannelVariant within a PriceList.
+    Each record defines the value of a variant’s price in a given sales channel
+    for a specific time period.
+
+Context:
+    Belongs to the pricing domain. Used to track sales prices across
+    different channels (shops, marketplaces) and supports time-based
+    validity for price changes.
+
+Fields:
+    - organization (FK → core.Organization): The owning organization.
+    - price_list (FK → pricing.PriceList): The price list this price belongs to.
+    - channel_variant (FK → catalog.ChannelVariant): The sales channel + variant.
+    - valid_from (DateTimeField): Timestamp when the price becomes effective.
+    - price (DecimalField): The actual price (non-negative, up to 12,4 digits).
+    - valid_to (DateTimeField): Optional end date for the price validity.
+    - need_update (BooleanField): Whether the price requires a sync/update.
+    - created_at / updated_at (DateTimeField): Audit timestamps.
+
+Relations:
+    - Organization → multiple SalesChannelVariantPrices
+    - PriceList → multiple SalesChannelVariantPrices
+    - ChannelVariant → multiple SalesChannelVariantPrices
+
+Used by:
+    - Pricing services to fetch current or historical prices
+    - Import and sync jobs to update shop/marketplace prices
+    - ERP processes for reporting and analytics
+
+Depends on:
+    - apps.core.models.Organization
+    - apps.pricing.models.PriceList
+    - apps.catalog.models.ChannelVariant
+
+Example:
+    >>> from apps.pricing.models import SalesChannelVariantPrice
+    >>> scvp = SalesChannelVariantPrice.objects.create(
+    ...     organization=org,
+    ...     price_list=pl,
+    ...     channel_variant=cv,
+    ...     valid_from="2025-01-01T00:00:00Z",
+    ...     price="99.9900"
+    ... )
+    >>> print(scvp)
+    [org=1] RETAIL-2025/ChannelVariant(123) @ 99.9900 from 2025-01-01 00:00:00
+"""
+
 
 from __future__ import annotations
 

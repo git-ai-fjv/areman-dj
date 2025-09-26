@@ -1,5 +1,40 @@
 #!/usr/bin/env python3
-# Created according to the user's permanent Copilot Base Instructions.
+# apps/catalog/management/commands/seed_state.py
+"""
+Purpose:
+    Management command to upsert State records. Each State represents a global
+    lifecycle or availability flag (e.g. Active, Inactive) and is identified by
+    a one-character code.
+
+Context:
+    States are referenced by ProductVariant and potentially other catalog
+    entities to standardize workflow and status handling. This command seeds or
+    updates these global states in an idempotent way.
+
+Used by:
+    - Initial system setup to seed required states (e.g., 'A:Active,I:Inactive').
+    - Developers/testers preparing demo or test data.
+    - Admins or ETL jobs aligning states with external ERP/PIM systems.
+
+Depends on:
+    - apps.catalog.models.state.State
+
+Key Features:
+    - Colon-delimited input: "code:description".
+    - Code must be exactly one uppercase character (CHAR(1)).
+    - Description is optional; trimmed to 100 characters.
+    - Comma-separated list of multiple states supported.
+    - Idempotent upsert by `state_code`.
+    - Dry-run mode available for validation only.
+
+Examples:
+    # Seed two states (Active, Inactive)
+    python manage.py seed_state --items "A:Active,I:Inactive"
+
+    # Dry run to validate input without applying changes
+    python manage.py seed_state --items "D:Deleted" --dry-run
+"""
+
 from __future__ import annotations
 
 import logging

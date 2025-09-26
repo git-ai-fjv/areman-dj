@@ -1,5 +1,51 @@
 # apps/imports/models/import_map_set.py
-# Created according to the user's permanent Copilot Base Instructions.
+"""
+Purpose:
+    Represents a configuration set that defines how raw import data from a
+    supplier and source type should be mapped into the ERP structure.
+
+Context:
+    Part of the imports domain. Each ImportMapSet groups multiple
+    ImportMapDetail entries that specify field-level mapping rules.
+    Defines which mapping applies for a given supplier and source type,
+    with a start date of validity.
+
+Fields:
+    - organization (FK → core.Organization): The organization this mapping belongs to.
+    - supplier (FK → partners.Supplier): The supplier providing the import data.
+    - source_type (FK → imports.ImportSourceType): The type of import source (file, API, etc.).
+    - description (CharField, 255): Human-readable description of the mapping set.
+    - valid_from (DateField): Date from which this mapping is effective.
+    - created_at (DateTimeField): Timestamp when the mapping set was created.
+
+Relations:
+    - Organization → multiple ImportMapSet
+    - Supplier → multiple ImportMapSet
+    - ImportSourceType → multiple ImportMapSet
+    - ImportMapSet → multiple ImportMapDetail (child rules)
+
+Used by:
+    - Import processing engine to determine which mapping rules to apply
+      for supplier imports.
+    - apps.imports.models.import_map_detail.ImportMapDetail
+
+Depends on:
+    - apps.core.models.Organization
+    - apps.partners.models.Supplier
+    - apps.imports.models.import_source_type.ImportSourceType
+
+Example:
+    >>> from apps.imports.models import ImportMapSet
+    >>> ms = ImportMapSet.objects.create(
+    ...     organization=org,
+    ...     supplier=supplier,
+    ...     source_type=src_type,
+    ...     description="Default CSV mapping",
+    ...     valid_from="2025-01-01",
+    ... )
+    >>> print(ms)
+    SUPP01 / file (from 2025-01-01)
+"""
 
 from __future__ import annotations
 from django.db import models

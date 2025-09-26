@@ -1,5 +1,40 @@
 # apps/pricing/services/price_ops.py
-# Created according to the user's Copilot Base Instructions.
+"""
+Purpose:
+    Service layer providing operations for creating or updating
+    SalesChannelVariantPrice records from dictionary payloads.
+    Handles validation, foreign key resolution, and timezone safety.
+
+Context:
+    Part of the `apps.pricing` app. Centralizes price handling logic
+    for sales channel variants to keep management commands and APIs lean.
+
+Used by:
+    - Import and synchronization jobs that assign prices to channel variants
+    - Management commands or services that need to update prices in bulk
+
+Depends on:
+    - apps.core.models.Organization
+    - apps.pricing.models.PriceList
+    - apps.catalog.models.ChannelVariant
+    - apps.pricing.models.SalesChannelVariantPrice
+    - Django transaction management and timezone utilities
+
+Example:
+    from apps.pricing.services.price_ops import upsert_sales_channel_variant_price
+    from datetime import datetime
+
+    payload = {
+        "org_code": 1,
+        "price_list_id": 10,
+        "channel_variant_id": 42,
+        "valid_from": datetime(2025, 1, 1, 0, 0),
+        "price": "19.99",
+        "need_update": True,
+    }
+    scvp, created = upsert_sales_channel_variant_price(payload)
+    print(scvp, created)
+"""
 
 from __future__ import annotations
 

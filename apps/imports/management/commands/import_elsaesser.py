@@ -1,6 +1,37 @@
 #!/usr/bin/env python3
 # apps/imports/management/commands/import_elsaesser.py
-# Created according to the user's permanent Copilot Base Instructions.
+"""
+Purpose:
+    Management command to import products from the Elsässer Filter-Technik Store API
+    into the database. Products are first logged in `ImportRun` and stored as raw JSON
+    payloads in `ImportRawRecord` for further processing.
+
+Context:
+    Part of the `apps.imports` app. Runs as a Django management command.
+    Used to synchronize supplier catalogs into the import pipeline.
+    Supports dry-run mode for previewing data without database writes.
+
+Used by:
+    - Developers (manual execution via `python manage.py import_elsaesser`)
+    - Automated import jobs (cron / scheduled tasks)
+    - Downstream services that consume `ImportRun` and `ImportRawRecord`
+
+Depends on:
+    - apps.imports.api.elsaesser_filter_client.FilterTechnikApiClient (API access)
+    - apps.imports.models.ImportRun (import session tracking)
+    - apps.imports.models.ImportRawRecord (raw product payloads)
+    - apps.imports.models.ImportSourceType (to classify source type)
+    - apps.partners.models.Supplier (supplier reference)
+    - Django transaction management and logging
+
+Example:
+    # Dry run: fetch and preview 50 products without DB writes
+    python manage.py import_elsaesser --supplier ELS01 --dry-run --limit 50
+
+    # Real import: insert all products for supplier 'ELS01'
+    python manage.py import_elsaesser --supplier ELS01
+"""
+
 
 from __future__ import annotations
 

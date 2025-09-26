@@ -1,5 +1,35 @@
 #!/usr/bin/env python3
-# Created according to the user's permanent Copilot Base Instructions.
+
+# apps/partners/management/commands/seed_suppliers.py
+"""
+Purpose:
+    Management command to upsert Supplier records into the database based on
+    colon-delimited input. Supports parsing and validation of supplier data
+    and ensures idempotent updates.
+
+Context:
+    Part of the `apps.partners.management.commands` package.
+    Used to populate or refresh suppliers for a given organization during
+    bootstrapping, testing, or data migrations.
+
+Used by:
+    - Manual execution via `python manage.py seed_suppliers`
+    - Setup scripts for initializing suppliers in development/test environments
+
+Depends on:
+    - apps.core.models.organization.Organization
+    - apps.partners.models.supplier.Supplier
+    - Django ORM (update_or_create, transaction.atomic)
+
+Example:
+    # Create a default test supplier (inactive)
+    python manage.py seed_suppliers --items "1:SUPP01:Default dummy Supplier:0"
+
+    # Create multiple suppliers (active + inactive)
+    python manage.py seed_suppliers --items "1:SUPP01:Main Supplier:1,1:SUPP02:Backup Supplier:0"
+"""
+
+
 from __future__ import annotations
 
 import logging

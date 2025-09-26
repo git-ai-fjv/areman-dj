@@ -1,6 +1,44 @@
 # apps/sales/models/sales_order_line.py
-#!/usr/bin/env python3
-# Created according to the user's permanent Copilot Base Instructions.
+"""
+Purpose:
+    Represents an individual line item in a sales order.
+    Each line links to a product variant, with ordered quantity and price.
+
+Context:
+    Child of SalesOrder. Used to record which items are sold,
+    at which price, and in what quantity. Basis for fulfillment and invoicing.
+
+Fields:
+    - organization (FK → Organization): Tenant isolation.
+    - sales_order (FK → SalesOrder): Parent sales order reference.
+    - row_no (SmallInteger): Unique row number per order.
+    - variant (FK → ProductVariant): Ordered product variant.
+    - qty (Decimal): Ordered quantity (> 0).
+    - price_at_order (Decimal): Net price per unit at time of order.
+    - note (TextField): Optional line-level note.
+    - is_active (Bool): Logical deletion flag.
+    - created_at / updated_at: System timestamps.
+
+Constraints:
+    - (organization, sales_order, row_no) unique.
+    - qty must be > 0.
+    - price_at_order must be ≥ 0.
+
+Example:
+    >>> from apps.sales.models import SalesOrderLine
+    >>> line = SalesOrderLine.objects.create(
+    ...     organization=org,
+    ...     sales_order=so,
+    ...     row_no=1,
+    ...     variant=variant,
+    ...     qty=10,
+    ...     price_at_order=99.99,
+    ... )
+    >>> print(line)
+    [org=MyOrg] SO=SO-2025-001 #1 -> VAR=SKU123
+"""
+
+
 from __future__ import annotations
 
 from django.db import models

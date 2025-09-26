@@ -1,5 +1,41 @@
 # apps/catalog/management/commands/seed_channel_variant.py
-# Created according to the user's Copilot Base Instructions.
+# apps/catalog/management/commands/seed_channel_variant.py
+"""
+Purpose:
+    Management command to upsert (create or update) ChannelVariant rows,
+    linking product variants to sales channels. Supports colon-delimited input
+    from CLI or file, including publish flags, active states, update markers,
+    and optional external IDs from shop systems.
+
+Context:
+    Part of the catalog app. Extends seeding of channels by assigning which
+    product variants are available in which channels (e.g. Webshop, Amazon).
+    Used during initial data setup or ongoing synchronization with external
+    sales platforms.
+
+Used by:
+    - Administrators to seed product-channel relations.
+    - Deployment scripts for initializing sales channel variants.
+    - Support staff for one-off updates to channel-variant publishing states.
+
+Depends on:
+    - apps.core.models.Organization (to resolve org by org_code).
+    - apps.catalog.models.Channel (to resolve channels by code or id).
+    - apps.catalog.models.ProductVariant (to resolve product variants by SKU or id).
+    - apps.catalog.models.ChannelVariant (target table for persistence).
+
+Example:
+    # Dry run (validate only)
+    python manage.py seed_channel_variant --file scripts/channel_variants.txt --dry-run
+
+    # Apply from file
+    python manage.py seed_channel_variant --file scripts/channel_variants.txt
+
+    # One-off inline seeding
+    python manage.py seed_channel_variant --items "1:WEB:SKU-1001:1:1:0,1:AMZ:SKU-2002:::1::AMZ-2002"
+"""
+
+
 from __future__ import annotations
 
 import logging

@@ -1,5 +1,46 @@
 # apps/catalog/models/channel.py
-# Created according to the user's Copilot Base Instructions.
+"""
+Purpose:
+    Define the Channel model representing a sales or distribution channel
+    (e.g., webshop, marketplace) within an organization. Captures its code,
+    name, kind, and base currency.
+
+Context:
+    Part of the `catalog` app. Channels represent the entry points through which
+    products and prices are published. They are used in pricing, procurement,
+    and integration with external systems (e.g., shops, marketplaces).
+
+Fields:
+    - id (AutoField): Primary key for the channel.
+    - organization (FK → core.Organization): The owning organization.
+    - channel_code (CharField, max 20): Short code identifying the channel
+      within an organization (unique per organization).
+    - channel_name (CharField, max 200): Human-readable channel name.
+    - kind (CharField, max 50): Type of channel ("shop" or "marketplace").
+    - base_currency (FK → core.Currency): Currency in which prices are defined.
+    - is_active (BooleanField): Whether this channel is active.
+    - created_at / updated_at (DateTimeField): Audit timestamps.
+
+Relations:
+    - Organization → multiple Channels
+    - Currency → multiple Channels
+    - Channel ↔ Product/Variant pricing via related models (e.g. ChannelVariant)
+
+Used by:
+    - Pricing (PriceGroup, PriceList, SalesChannelVariantPrice)
+    - Procurement (for supplier channel relations, if applicable)
+    - Services for integration with external systems
+
+Depends on:
+    - Django ORM
+    - core.Organization
+    - core.Currency
+
+Example:
+    # Get all active marketplace channels for org 1
+    Channel.objects.filter(organization__org_code=1, kind="marketplace", is_active=True)
+"""
+
 
 
 

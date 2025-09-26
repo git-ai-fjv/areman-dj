@@ -1,4 +1,32 @@
 # apps/imports/api/api_client_base.py
+# apps/imports/api/api_client_base.py
+"""
+Purpose:
+    Provides a reusable base client for Store-API style integrations.
+    Handles session setup, request headers, and POST requests with error handling.
+
+Context:
+    Part of the `imports` app. Serves as the common foundation for external
+    API connectors (e.g. Shopware, suppliers). Ensures consistent logging,
+    authentication, and error reporting.
+
+Used by:
+    - Specialized API clients in `apps/imports/api/` that inherit from BaseApiClient
+    - Import services that need to fetch or push data to external systems
+
+Depends on:
+    - requests (HTTP session handling)
+    - logging for structured error reporting
+    - apps.imports.api.api_client_base.ApiError for request failures
+
+Example:
+    from apps.imports.api.api_client_base import BaseApiClient
+
+    client = BaseApiClient(base_url="https://shop/api", access_key="xyz123")
+    response = client._post("search/product", {"filter": []})
+    print(response.status_code, response.json())
+"""
+
 from __future__ import annotations
 import requests
 import logging

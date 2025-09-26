@@ -1,5 +1,29 @@
 # apps/core/management/commands/seed_currency.py
-# Created according to the user's Copilot Base Instructions.
+"""
+Management command to seed or update Currency records in the database.
+
+This command supports both direct item strings (via --items) and external
+files (via --file). Each currency is defined in a compact colon-delimited
+format:
+
+    code:name[:symbol][:decimal_places][:active]
+
+Arguments:
+  --items   Comma-separated entries with the above format.
+  --file    Path to a text file containing one entry per line.
+  --dry-run Validate and parse input without persisting any changes.
+
+Behavior:
+  • Upserts currencies by primary key 'code' (ISO-4217).
+  • Default values: symbol="", decimal_places=2, active=True.
+  • Input is validated and trimmed to model field length constraints.
+  • Provides summary of created/updated records or dry-run output.
+
+Examples:
+  python manage.py seed_currency --items "EUR:Euro:€:2,USD:US Dollar:$:2"
+  python manage.py seed_currency --file scripts/currencies.txt
+"""
+
 
 # python manage.py seed_currency --items "EUR:Euro:€:2,USD:US Dollar:$:2,GBP:Pound Sterling:£:2"
 
