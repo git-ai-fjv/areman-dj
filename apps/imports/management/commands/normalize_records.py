@@ -3,18 +3,22 @@
 # apps/imports/management/commands/normalize_records.py
 """
 Purpose:
-    Normalize all ImportRawRecords for a given supplier where ImportRun.map_set is NULL.
-    The command assigns the newest available ImportMapSet to each ImportRun and
-    applies the mapping rules to populate `normalized_data`.
+    Normalize all ImportRawRecords for a given supplier where ImportRun.map_set is NULL,
+    or reprocess a specific ImportRun when --run-id is provided.
 
 Usage:
     python manage.py normalize_records --supplier 70002
+    python manage.py normalize_records --run-id 15
 
 Behavior:
-    - Finds newest ImportMapSet for the supplier + source_type of each ImportRun.
-    - If no ImportMapSet exists, aborts with an error.
-    - Sets ImportRun.map_set if not already set.
-    - Normalizes all ImportRawRecords with `normalized_data IS NULL` in batches.
+    - If --run-id is given:
+        * Clears normalized_data + error_message_product_import for all records of that run.
+        * Processes only this ImportRun.
+    - Otherwise:
+        * Finds newest ImportMapSet for the supplier + source_type of each ImportRun
+          where map_set is NULL.
+        * Sets ImportRun.map_set if not already set.
+        * Normalizes all ImportRawRecords with `normalized_data IS NULL` in batches.
     - Loads defaults first, then applies supplier mapping (overwriting).
     - Logs processed counts (success vs. error).
 """
@@ -37,28 +41,49 @@ logger = logging.getLogger(__name__)
 
 
 class Command(BaseCommand):
-    help = "Normalize ImportRawRecords for a supplier where ImportRun.map_set is NULL."
+    help = "Normalize ImportRawRecords for a supplier (or specific ImportRun)."
 
     def add_arguments(self, parser):
         parser.add_argument(
             "--supplier",
-            required=True,
-            help="Supplier code (e.g. 70002)"
+            help="Supplier code (e.g. 70002). Ignored if --run-id is used.",
+        )
+        parser.add_argument(
+            "--run-id",
+            type=int,
+            help="Optional: reprocess this specific ImportRun id instead of supplier-wide processing.",
         )
 
     @transaction.atomic
     def handle(self, *args, **options):
-        supplier_code = options["supplier"]
+        run_id = options.get("run_id")
+        supplier_code = options.get("supplier")
 
-        try:
-            supplier = Supplier.objects.get(supplier_code=supplier_code)
-        except Supplier.DoesNotExist:
-            raise CommandError(f"Supplier '{supplier_code}' not found")
+        if run_id:
+            try:
+                run = ImportRun.objects.get(id=run_id)
+            except ImportRun.DoesNotExist:
+                raise CommandError(f"ImportRun {run_id} not found")
 
-        runs = ImportRun.objects.filter(supplier=supplier, map_set__isnull=True)
-        if not runs.exists():
-            self.stdout.write(self.style.WARNING("No ImportRuns without map_set found."))
-            return
+            # reset normalized_data + error field
+            ImportRawRecord.objects.filter(import_run=run).update(
+                normalized_data=None, error_message_product_import=None
+            )
+            runs = [run]
+
+        else:
+            if not supplier_code:
+                raise CommandError("You must provide either --supplier or --run-id")
+
+            try:
+                supplier = Supplier.objects.get(supplier_code=supplier_code)
+            except Supplier.DoesNotExist:
+                raise CommandError(f"Supplier '{supplier_code}' not found")
+
+            runs = ImportRun.objects.filter(supplier=supplier, map_set__isnull=True)
+            if not runs.exists():
+                self.stdout.write(self.style.WARNING("No ImportRuns without map_set found."))
+                return
 
         total_runs = 0
         total_success = 0
@@ -68,8 +93,8 @@ class Command(BaseCommand):
             # find newest mapping for this supplier + source_type
             map_set = (
                 ImportMapSet.objects.filter(
-                    supplier=supplier,
-                    source_type=run.source_type
+                    supplier=run.supplier,
+                    source_type=run.source_type,
                 )
                 .order_by("-valid_from")
                 .first()
@@ -77,7 +102,8 @@ class Command(BaseCommand):
 
             if not map_set:
                 raise CommandError(
-                    f"No ImportMapSet found for supplier={supplier_code}, source_type={run.source_type.code}"
+                    f"No ImportMapSet found for supplier={run.supplier.supplier_code}, "
+                    f"source_type={run.source_type.code}"
                 )
 
             run.map_set = map_set
@@ -95,7 +121,7 @@ class Command(BaseCommand):
 
             for rec in raw_records.iterator():
                 try:
-                    # load defaults first (use map_set.organization!)
+                    # load defaults first
                     normalized = load_defaults(map_set.organization)
 
                     # apply supplier mapping and overwrite defaults
@@ -129,11 +155,15 @@ class Command(BaseCommand):
             total_success += success_count
             total_errors += error_count
 
-            self.stdout.write(self.style.SUCCESS(
-                f"Processed ImportRun {run.id}: {success_count} success, {error_count} errors "
-                f"with map_set {map_set.id}."
-            ))
+            self.stdout.write(
+                self.style.SUCCESS(
+                    f"Processed ImportRun {run.id}: {success_count} success, "
+                    f"{error_count} errors with map_set {map_set.id}."
+                )
+            )
 
-        self.stdout.write(self.style.SUCCESS(
-            f"Done. {total_runs} runs processed, {total_success} records normalized, {total_errors} errors."
-        ))
+        self.stdout.write(
+            self.style.SUCCESS(
+                f"Done. {total_runs} runs processed, {total_success} records normalized, {total_errors} errors."
+            )
+        )
