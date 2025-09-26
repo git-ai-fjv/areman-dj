@@ -71,6 +71,10 @@ class Supplier(models.Model):
     lead_time_days = models.SmallIntegerField(
         default=0, help_text="Typical lead time in days."
     )
+    comment = models.CharField(
+        max_length=200, blank=True, default="", help_text="comment"
+    )  # Keep CharField for cross-DB portability; can switch to EmailField later.
+
 
     # Timestamps for parity with other tables
     created_at = models.DateTimeField(db_default=Now(), editable=False)

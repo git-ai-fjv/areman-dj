@@ -1,0 +1,73 @@
+# ============================
+# 📦 catalog (Produktkatalog)
+# ============================
+catalog_channel                  → Vertriebskanäle
+catalog_channelvariant           → Zuordnung Produktvariante ↔ Vertriebskanal
+catalog_manufacturer             → Herstellerstammdaten
+catalog_origin                   → Herkunft (z. B. EU / Non-EU)
+catalog_packing                  → Verpackungseinheiten / Packgrößen
+catalog_product                  → Produkte (Artikelstammdaten)
+catalog_productgroup             → Warengruppen / Produktkategorien
+catalog_productmedia             → Medien zu Produkten/Varianten
+catalog_productvariant           → Kaufbare Produktvarianten (SKU, Maße, EAN)
+catalog_state                    → Zustände (neu, gebraucht, etc.)
+
+# ============================
+# 📦 core (Basis)
+# ============================
+core_currency                    → Währungen (Code, Name, Symbol)
+core_organization                → Organisationen / Mandanten
+
+# ============================
+# 📦 imports (Datenimporte)
+# ============================
+imports_importdatatype           → Definierte Datentypen für Importe
+imports_importerrorlog           → Fehlerprotokoll für Importläufe
+imports_importglobaldefaultset   → Sets von Defaultwerten
+imports_importglobaldefaultline  → Einzelne Defaultwerte je Zielpfad
+imports_importmapset             → Mappings für Lieferant + Quelle
+imports_importmapdetail          → Feldebene-Mappings
+imports_importrawrecord          → Rohdatensätze aus Importdateien
+imports_importrun                → Kopf von Importläufen
+imports_importsourcetype         → Typ der Quelle (CSV, XML, API)
+imports_importtransformtype      → Transformationen (z. B. Formatierung)
+
+# ============================
+# 📦 partners (Geschäftspartner)
+# ============================
+partners_supplier                → Lieferanten (Stammdaten, Konditionen)
+partners_customer                → Kunden (Stammdaten, Konditionen)
+
+# ============================
+# 📦 pricing (Preise & Steuern)
+# ============================
+pricing_currencyrate             → Wechselkurse
+pricing_pricegroup               → Preisgruppen (B2B, B2C, Reseller)
+pricing_pricelist                → Preislisten
+pricing_saleschannelvariantprice → Preise pro Kanalvariante & Preisliste
+pricing_taxclass                 → Steuerklassen
+
+# ============================
+# 📦 procurement (Einkauf)
+# ============================
+procurement_purchaseorder        → Einkaufsaufträge (Kopf)
+procurement_purchaseorderline    → Einkaufsauftrags-Positionen
+procurement_supplierproduct      → Lieferanten-spezifische Produktdaten
+procurement_supplierprice        → Preise für Lieferantenprodukte
+procurement_supplierquantityprice→ Mengenstaffeln für Lieferantenprodukte
+
+# ============================
+# 📦 sales (Verkauf)
+# ============================
+sales_salesorder                 → Kundenaufträge (Kopf)
+sales_salesorderline             → Kundenauftrags-Positionen
+
+# ============================
+# 📦 ingestion (Datenaufnahme)
+# ============================
+(none)
+
+# ============================
+# 📦 inventory (Bestandsführung)
+# ============================
+(none)

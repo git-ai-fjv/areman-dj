@@ -1,0 +1,14 @@
+mache eine Auflistung aller Klassen und der Memberfunktionen
+
+ich schicke dir nun alle Modelle in einer Datei.
+
+all_models_combined.txt
+
+erstelle mir eine pysql anweisung was mir alle tabellen der Modelle erstellt
+
+
+erstelle mir eine Dokumentation fuer jede App einzeln, wozu jede Tabelle ist. Schritt fuer Schritt. gehe alphabetisch vor
+
+mach mit naechster App weiter
+
+Erstelle Gesamtübersicht aller Tabellen nach Apps als kompakte Tabelle in einem Codefenster, damit ich sie kopieren kann.

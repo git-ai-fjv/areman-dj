@@ -1,0 +1,2413 @@
+
+# =============================================================================
+CHATGPT_INSTRUCTION:
+forget_previous = true
+context = this_file
+later_files_override = true
+todo_mode = if_present
+default_reply = "understand all: Awaiting your instructions."
+# =============================================================================            
+### BEGIN CHATGPT_INSTRUCTION            
+# 🚨 INSTRUCTION FOR CHATGPT 🚨
+#
+# This file is a combined snapshot of only the Django model files.
+# It contains:
+#   - All Python model files under apps/*/models/
+#
+# Purpose:
+#   - Forget all previously remembered source code in this chat.
+#   - Only keep THIS file as the single source of truth.
+#   - When the user uploads this file in a new chat, reset context.
+#   - Later uploaded individual files override the versions here.
+#
+# Rules:
+#   - Do NOT suggest schema changes blindly.
+#   - Always respect definitions and order in this file.
+#   - Keep answers focused, avoid code duplication unless asked.
+#
+# Special:
+#   - If a file named `chatgpt_todo.txt` is included at the end,
+#     treat it as the active task list and follow it literally.
+#   - If no such file exists, you MUST ONLY reply with exactly:
+#       "understand all: Awaiting your instructions."
+#     Do NOT add examples, do NOT summarize, do NOT guess.
+### END CHATGPT_INSTRUCTION
+# =============================================================================
+
+
+
+# ===== FILE: apps/core/models/organization.py =====
+#!/usr/bin/env python3
+# Created according to the user's permanent Copilot Base Instructions.
+from __future__ import annotations
+from django.db import models
+
+
+class Organization(models.Model):
+    """Organization (Mandant) master data."""
+
+    org_code = models.SmallIntegerField(
+        primary_key=True,
+        help_text="Business code for the organization (small integer).",
+    )
+    org_description = models.CharField(
+        max_length=200,
+        blank=True,
+        help_text="Optional description/name of the organization.",
+    )
+
+    class Meta:
+        verbose_name = "Organization"
+        verbose_name_plural = "Organizations"
+
+    def __str__(self) -> str:
+        return f"{self.org_description or 'Organization'}"
+
+
+
+# ===== FILE: apps/core/models/currency.py =====
+# apps/core/models/currency.py
+# Created according to the user's Copilot Base Instructions.
+
+
+
+from __future__ import annotations
+
+from django.db import models
+from django.core.validators import MinValueValidator, MaxValueValidator
+from django.db.models.functions import Now
+
+
+class Currency(models.Model):
+    """ISO-4217 Währungen mit Anzeige-Infos und Aktiv-Flag."""
+
+    # code CHAR(3) PRIMARY KEY
+    code = models.CharField(primary_key=True, max_length=3)
+
+    name = models.CharField(max_length=100)
+    symbol = models.CharField(max_length=8, null=True, blank=True)
+
+    # 0..6 (EUR=2) – validieren in App + DB
+    decimal_places = models.SmallIntegerField(
+        validators=[MinValueValidator(0), MaxValueValidator(6)]
+    )
+
+    is_active = models.BooleanField(default=True)
+
+    # DB setzt Timestamps (keine auto_now*; wir spiegeln nur die Spalten)
+    created_at = models.DateTimeField(db_default=Now(), editable=False)
+    updated_at = models.DateTimeField(db_default=Now(), editable=False)
+
+    def __str__(self) -> str:
+        return f"{self.code} — {self.name}"
+
+
+
+
+# ===== FILE: apps/imports/models/import_data_type.py =====
+# apps/imports/models/import_data_type.py
+# Created according to the user's permanent Copilot Base Instructions.
+
+from __future__ import annotations
+from django.db import models
+
+
+class ImportDataType(models.Model):
+    """
+    Defines available datatypes for mapping transformations.
+    Examples: string, integer, decimal, boolean, date, datetime, json.
+    """
+
+    code = models.CharField(
+        max_length=30,
+        unique=True,
+        help_text="Short code identifier (e.g., 'str', 'int', 'decimal', 'bool').",
+    )
+
+    description = models.CharField(
+        max_length=100,
+        help_text="Human-readable description (e.g., 'String', 'Integer').",
+    )
+
+    python_type = models.CharField(
+        max_length=50,
+        help_text="Target Python type or handler (e.g., 'str', 'int', 'decimal.Decimal').",
+    )
+
+    class Meta:
+        verbose_name = "Import Data Type"
+        verbose_name_plural = "Import Data Types"
+
+    def __str__(self) -> str:
+        return f"{self.code} ({self.description})"
+
+
+
+# ===== FILE: apps/imports/models/import_global_default_line.py =====
+# apps/imports/models/import_global_default_line.py
+
+from __future__ import annotations
+from django.db import models
+from apps.imports.models.import_global_default_set import ImportGlobalDefaultSet
+from apps.imports.models.import_data_type import ImportDataType
+from apps.imports.models.import_transform_type import ImportTransformType
+
+
+class ImportGlobalDefaultLine(models.Model):
+    """
+    Line items for global defaults.
+    Each entry defines a target path and a default value.
+    """
+
+    set = models.ForeignKey(
+        ImportGlobalDefaultSet,
+        on_delete=models.CASCADE,
+        related_name="global_default_lines",
+    )
+
+    target_path = models.CharField(max_length=255)
+    default_value = models.JSONField(null=True, blank=True)
+
+    # statt CharField → FK
+    transform = models.ForeignKey(
+        ImportTransformType,
+        on_delete=models.PROTECT,
+        null=True,
+        blank=True,
+        related_name="default_lines",
+        help_text="Transform to apply to this field (FK instead of free text).",
+    )
+
+    is_required = models.BooleanField(default=False)
+
+    target_datatype = models.ForeignKey(
+        ImportDataType,
+        on_delete=models.PROTECT,
+        related_name="default_lines",
+        help_text="Datatype for this default value (e.g., str, int, decimal)."
+    )
+
+    class Meta:
+        verbose_name = "Import Global Default Line"
+        verbose_name_plural = "Import Global Default Lines"
+        constraints = [
+            models.UniqueConstraint(
+                fields=["set", "target_path"],
+                name="uq_globaldefaultline_set_target"
+            )
+        ]
+
+    def __str__(self) -> str:
+        return f"{self.target_path} = {self.default_value}"
+
+
+# ===== FILE: apps/imports/models/import_global_default_set.py =====
+# apps/imports/models/import_global_default_set.py
+# Created according to the user's permanent Copilot Base Instructions.
+
+from __future__ import annotations
+from django.db import models
+
+
+class ImportGlobalDefaultSet(models.Model):
+    """
+    Head table for global defaults that apply to all suppliers.
+    Each set has a validity period and a description.
+    """
+    organization = models.ForeignKey(
+        "core.Organization",
+        on_delete=models.PROTECT,
+        related_name="global_default_sets",
+    )
+
+    description = models.CharField(max_length=255)
+    valid_from = models.DateField()
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        verbose_name = "Import Global Default Set"
+        verbose_name_plural = "Import Global Default Sets"
+        constraints = [
+            models.UniqueConstraint(
+                fields=["organization", "valid_from"],
+                name="uq_globaldefaultset_org_validfrom",
+            )
+        ]
+
+    def __str__(self) -> str:
+        return f"{self.description} (from {self.valid_from})"
+
+
+# ===== FILE: apps/imports/models/import_error_log.py =====
+# apps/imports/models/import_error_log.py
+# Created according to the user's permanent Copilot Base Instructions.
+
+from __future__ import annotations
+
+from django.db import models
+
+
+class ImportErrorLog(models.Model):
+    """
+    Table for logging errors that occur while mapping ImportRawRecord
+    entries into structured ERP tables.
+    """
+
+    import_run = models.ForeignKey(
+        "imports.ImportRun",
+        on_delete=models.CASCADE,
+        related_name="error_logs",
+    )
+    line_number = models.IntegerField(null=True, blank=True)
+    error_message = models.TextField()
+    payload = models.JSONField(null=True, blank=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        verbose_name = "Import Error Log"
+        verbose_name_plural = "Import Error Logs"
+
+    def __str__(self) -> str:
+        return f"Error in run {self.import_run_id} line {self.line_number}: {self.error_message}"
+
+
+#
+# Beispiel:
+#
+# from apps.imports.models.import_error_log import ImportErrorLog
+# from apps.imports.models.import_run import ImportRun
+#
+# run = ImportRun.objects.first()
+# ImportErrorLog.objects.create(
+#     import_run=run,
+#     line_number=42,
+#     error_message="Invalid price format",
+#     payload={"Part Number": "X123", "Listenpreis": "abc"}
+# )
+#
+# -> erzeugt einen neuen Fehler-Logeintrag, der später im Admin sichtbar ist.
+
+
+
+
+# ===== FILE: apps/imports/models/import_raw_record.py =====
+# apps/imports/models/import_raw_record.py
+# Created according to the user's permanent Copilot Base Instructions.
+from __future__ import annotations
+from django.db import models
+from django.utils import timezone
+
+
+class ImportRawRecord(models.Model):
+    """
+    Raw import storage for supplier/customer integrations.
+    Stores unmodified payloads (JSON, XML, CSV rows, etc.) for auditing, error handling and reprocessing.
+    """
+
+    import_run = models.ForeignKey(
+        "imports.ImportRun",
+        on_delete=models.CASCADE,
+        related_name="raw_records",
+        help_text="Import run this record belongs to.",
+    )
+
+    line_number = models.IntegerField(
+        help_text="Sequential line number within the import run (starting at 1)."
+    )
+
+    payload = models.JSONField(
+        help_text="Full raw payload from the external source (JSON or converted dict)."
+    )
+
+    supplier_product_reference = models.CharField(
+        max_length=255,
+        null=True,
+        blank=True,
+        db_index=True,
+        help_text="Supplier's article reference (e.g., supplier SKU or manufacturer number) for fast lookup.",
+    )
+
+    product_is_imported = models.BooleanField(
+        default=False,
+        help_text="True if this record has been successfully imported into ERP tables.",
+    )
+
+    price_is_imported = models.BooleanField(
+        default=False,
+        help_text="True if this record has been successfully imported into price tables.",
+    )
+
+
+    product_imported_at = models.DateTimeField(
+        null=True,
+        blank=True,
+        help_text="Timestamp when this record was imported.",
+    )
+
+    price_imported_at = models.DateTimeField(
+        null=True,
+        blank=True,
+        help_text="Timestamp when pricing was imported.",
+    )
+
+    is_product_import_error = models.BooleanField(
+        default=False,
+        help_text="True if processing this record failed.",
+    )
+
+    is_price_import_error = models.BooleanField(
+        default=False,
+        help_text="True if processing this record failed.",
+    )
+
+
+    error_message_product_import = models.TextField(
+        null=True,
+        blank=True,
+        help_text="Detailed error message if processing failed.",
+    )
+
+    error_message_price_import = models.TextField(
+        null=True,
+        blank=True,
+        help_text="Detailed error message if processing failed.",
+    )
+
+
+    retry_count_product_import = models.PositiveIntegerField(
+        default=0,
+        help_text="Number of times this record has been retried for processing.",
+    )
+
+    retry_count_price_import = models.PositiveIntegerField(
+        default=0,
+        help_text="Number of times this record has been retried for processing.",
+    )
+
+    class Meta:
+        verbose_name = "Import Raw Record"
+        verbose_name_plural = "Import Raw Records"
+        constraints = [
+            models.UniqueConstraint(
+                fields=["import_run", "line_number"],
+                name="uniq_import_run_line",
+            )
+        ]
+        indexes = [
+        #     models.Index(fields=["supplier_product_reference"], name="idx_rawrecord_supplier_ref"),
+              models.Index(fields=["product_is_imported"], name="idx_rawrecord_product_imported"),
+              models.Index(fields=["price_is_imported"], name="idx_rawrecord_price_imported"),
+        #     models.Index(fields=["is_product_import_error"], name="idx_rawrecord_product_error"),
+        #     models.Index(fields=["is_price_import_error"], name="idx_rawrecord_price_error"),
+        #     models.Index(fields=["product_is_imported", "import_run_id"], name="idx_rawrecord_product_imported_run),"
+        #     models.Index(fields=["price_is_imported", "import_run_id"], name="idx_rawrecord_price_imported_run),"
+        ]
+
+    def __str__(self) -> str:
+        return (
+            f"Run {self.import_run_id}, line {self.line_number}, "
+            f"ref={self.supplier_product_reference or 'n/a'}"
+        )
+
+
+# ===== FILE: apps/imports/models/import_map_set.py =====
+# apps/imports/models/import_map_set.py
+# Created according to the user's permanent Copilot Base Instructions.
+
+from __future__ import annotations
+from django.db import models
+
+
+class ImportMapSet(models.Model):
+    """
+    Head table for import mapping configurations.
+    Defines which mapping applies to a supplier + source type,
+    with a validity period.
+    """
+
+    organization = models.ForeignKey(
+        "core.Organization",
+        on_delete=models.PROTECT,
+        related_name="import_map_sets",
+    )
+
+    supplier = models.ForeignKey(
+        "partners.Supplier",
+        on_delete=models.PROTECT,
+        related_name="import_map_sets",
+    )
+
+    source_type = models.ForeignKey(
+        "imports.ImportSourceType",
+        on_delete=models.PROTECT,
+        related_name="import_map_sets",
+        help_text="Import source type (e.g., file, API, CSV, Excel).",
+    )
+
+    description = models.CharField(max_length=255)
+
+    valid_from = models.DateField(
+        help_text="Date from which this mapping is valid."
+    )
+
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        verbose_name = "Import Map Set"
+        verbose_name_plural = "Import Map Sets"
+        constraints = [
+            models.UniqueConstraint(
+                fields=["organization", "supplier", "source_type", "valid_from"],
+                name="uq_mapset_org_supplier_type_validfrom",
+            )
+        ]
+
+    def __str__(self) -> str:
+        return f"{self.supplier.supplier_code} / {self.source_type.code} (from {self.valid_from})"
+
+
+# ===== FILE: apps/imports/models/import_map_detail.py =====
+# apps/imports/models/import_map_detail.py
+# Created according to the user's permanent Copilot Base Instructions.
+
+from __future__ import annotations
+from django.db import models
+from apps.imports.models.import_map_set import ImportMapSet
+from apps.imports.models.import_data_type import ImportDataType
+
+
+class ImportMapDetail(models.Model):
+    """
+    Line items for import mapping.
+    Each entry defines how to map a field from the source payload
+    to a target path in the standardized dict.
+    """
+
+    map_set = models.ForeignKey(
+        ImportMapSet,
+        on_delete=models.CASCADE,
+        related_name="map_details",
+    )
+
+    source_path = models.CharField(
+        max_length=255,
+        help_text="Path in the source payload (e.g., 'translated.name', 'Artikelnummer').",
+    )
+
+    target_path = models.CharField(
+        max_length=255,
+        help_text="Path in the standardized dict (e.g., 'product.name', 'price.price').",
+    )
+
+    target_datatype = models.ForeignKey(
+        ImportDataType,
+        on_delete=models.PROTECT,
+        related_name="map_details",
+        help_text="Datatype the target value should be converted to.",
+    )
+
+    transform = models.CharField(
+        max_length=50,
+        null=True,
+        blank=True,
+        help_text="Optional transform function to apply (e.g., 'upper', 'decimal').",
+    )
+
+    is_required = models.BooleanField(
+        default=False,
+        help_text="If true, the target field must be present after mapping.",
+    )
+
+    class Meta:
+        verbose_name = "Import Map Detail"
+        verbose_name_plural = "Import Map Details"
+        constraints = [
+            models.UniqueConstraint(
+                fields=["map_set", "source_path", "target_path"],
+                name="uq_mapdetail_set_source_target",
+            )
+        ]
+
+    def __str__(self) -> str:
+        return f"{self.source_path} → {self.target_path} ({self.target_datatype.code})"
+
+
+# ===== FILE: apps/imports/models/import_transform_type.py =====
+# apps/imports/models/import_transform_type.py
+# Created according to the user's permanent Copilot Base Instructions.
+
+from __future__ import annotations
+from django.db import models
+
+
+class ImportTransformType(models.Model):
+    """
+    Central registry for all supported transforms.
+    Example: uppercase, lowercase, strip, int, decimal, bool
+    """
+
+    code = models.CharField(
+        max_length=50,
+        unique=True,
+        help_text="Unique code for this transform (e.g., uppercase, int, bool).",
+    )
+    description = models.CharField(
+        max_length=255,
+        help_text="Human-readable description of what this transform does.",
+    )
+
+    class Meta:
+        verbose_name = "Import Transform Type"
+        verbose_name_plural = "Import Transform Types"
+        ordering = ["code"]
+
+    def __str__(self) -> str:
+        return f"{self.code} — {self.description}"
+
+
+
+# ===== FILE: apps/imports/models/import_source_type.py =====
+# apps/imports/models/import_source_type.py
+# Created according to the user's permanent Copilot Base Instructions.
+from __future__ import annotations
+from django.db import models
+
+
+class ImportSourceType(models.Model):
+    """
+    Reference table for different import source types
+    (e.g., file, API, manual, other).
+    """
+
+    code = models.CharField(
+        max_length=20,
+        unique=True,
+        help_text="Short machine-readable code (e.g., 'file', 'api')."
+    )
+    description = models.CharField(
+        max_length=100,
+        help_text="Human-readable description of the source type."
+    )
+
+    class Meta:
+        verbose_name = "Import Source Type"
+        verbose_name_plural = "Import Source Types"
+
+    def __str__(self) -> str:
+        return f"{self.code} — {self.description}"
+
+
+
+# ===== FILE: apps/imports/models/import_run.py =====
+# apps/imports/models/import_run.py
+# Created according to the user's permanent Copilot Base Instructions.
+from __future__ import annotations
+from django.db import models
+from django.utils import timezone
+
+
+class ImportRun(models.Model):
+    """
+    Represents a single supplier import execution (the header).
+    Tracks metadata and overall status of the import process.
+    """
+
+    supplier = models.ForeignKey(
+        "partners.Supplier",
+        on_delete=models.PROTECT,
+        related_name="import_runs",
+        help_text="Supplier this import run belongs to."
+    )
+
+    source_type = models.ForeignKey(
+        "imports.ImportSourceType",
+        on_delete=models.PROTECT,
+        related_name="import_runs",
+        help_text="Type of source for this import (e.g., file, API)."
+    )
+
+    source_file = models.CharField(
+        max_length=500,
+        help_text="Absolute or relative path to the source file that was imported.",
+        null=True,
+        blank=True,
+    )
+
+    started_at = models.DateTimeField(default=timezone.now)
+    finished_at = models.DateTimeField(null=True, blank=True)
+    status = models.CharField(
+        max_length=20,
+        default="running",
+        help_text="running, success, failed"
+    )
+    total_records = models.IntegerField(
+        null=True,
+        blank=True,
+        help_text="Number of raw records fetched in this run."
+    )
+
+    is_processed = models.BooleanField(
+        default=False,
+        help_text="Marks whether this run has already been processed into ERP tables."
+    )
+
+    processed_at = models.DateTimeField(
+        null=True,
+        blank=True,
+        help_text="Timestamp when raw records were processed into ERP tables."
+    )
+
+    class Meta:
+        verbose_name = "Import Run"
+        verbose_name_plural = "Import Runs"
+
+    def __str__(self) -> str:
+        return f"ImportRun {self.id} — {self.supplier.supplier_code} at {self.started_at:%Y-%m-%d %H:%M}"
+
+
+
+# ===== FILE: apps/pricing/models/currency_rate.py =====
+# Created according to the user's Copilot Base Instructions.
+"""
+-- =========================
+-- TABLE: currency_rate
+-- =========================
+CREATE TABLE public.currency_rate (
+  id          BIGSERIAL     PRIMARY KEY NOT NULL,
+  base_code   CHAR(3)       NOT NULL,   -- FK -> currency(code)
+  quote_code  CHAR(3)       NOT NULL,   -- FK -> currency(code)
+  rate        NUMERIC(16,8) NOT NULL,   -- z.B. 1.12345678
+  rate_date   DATE          NOT NULL,   -- Kurs-Datum
+  created_at  TIMESTAMPTZ   NOT NULL DEFAULT statement_timestamp(),
+  updated_at  TIMESTAMPTZ   NOT NULL DEFAULT statement_timestamp(),
+  FOREIGN KEY (base_code)  REFERENCES public.currency (code) ON DELETE NO ACTION,
+  FOREIGN KEY (quote_code) REFERENCES public.currency (code) ON DELETE NO ACTION,
+  CONSTRAINT ck_currency_rate_positive CHECK (rate > 0),
+  CONSTRAINT uniq_currency_rate UNIQUE (base_code, quote_code, rate_date)
+);
+CREATE INDEX idx_currency_rate_date       ON public.currency_rate (rate_date);
+CREATE INDEX idx_currency_rate_base_quote ON public.currency_rate (base_code, quote_code);
+"""
+from __future__ import annotations
+
+from django.db import models
+from django.core.validators import MinValueValidator
+from django.db.models.functions import Now
+from django.db.models import Q
+
+
+class CurrencyRate(models.Model):
+    #id = models.BigAutoField(primary_key=True)
+
+    base = models.ForeignKey(
+        "core.Currency",
+        on_delete=models.PROTECT,
+        related_name="base_rates",
+    )
+    quote = models.ForeignKey(
+        "core.Currency",
+        on_delete=models.PROTECT,
+        related_name="quote_rates",
+    )
+
+    rate = models.DecimalField(max_digits=16, decimal_places=8, validators=[MinValueValidator(0.00000001)])
+    rate_date = models.DateField()
+
+    created_at = models.DateTimeField(db_default=Now(), editable=False)
+    updated_at = models.DateTimeField(db_default=Now(), editable=False)
+
+    def __str__(self) -> str:
+        return f"{self.base_id}/{self.quote_id} @ {self.rate} ({self.rate_date})"
+
+    class Meta:
+        #db_table = "currency_rate"
+        # indexes = [
+        #     models.Index(fields=("rate_date",), name="idx_currency_rate_date"),
+        #     models.Index(fields=("base", "quote"), name="idx_currency_rate_base_quote"),
+        # ]
+        constraints = [
+            models.UniqueConstraint(
+                fields=("base", "quote", "rate_date"),
+                name="uniq_currency_rate",
+            ),
+            models.CheckConstraint(
+                name="ck_currency_rate_positive",
+                check=Q(rate__gt=0),
+            ),
+        ]
+
+
+# ===== FILE: apps/pricing/models/price_group.py =====
+#!/usr/bin/env python3
+# Created according to the user's permanent Copilot Base Instructions.
+from __future__ import annotations
+from django.db import models
+
+
+class PriceGroup(models.Model):
+    """Price group master data, scoped by organization."""
+
+    # Force 32-bit PK (SERIAL-like). Remove to use project default (BigAutoField).
+   # id = models.AutoField(primary_key=True)
+
+    # FK to core.Organization(org_code); DB column stays 'org_code'
+    organization = models.ForeignKey(
+        "core.Organization",
+        on_delete=models.PROTECT,  # ON DELETE RESTRICT equivalent
+        related_name="price_groups",
+    )
+
+    price_group_code = models.CharField(
+        max_length=20,
+        help_text="Price group code (unique within organization).",
+    )
+    price_group_description = models.CharField(
+        max_length=200,
+        blank=True,
+        help_text="Optional description/name of the price group.",
+    )
+
+    class Meta:
+        #db_table = "price_group"
+        verbose_name = "Price Group"
+        verbose_name_plural = "Price Groups"
+        constraints = [
+            models.UniqueConstraint(
+                fields=["organization", "price_group_code"],
+                name="uniq_price_group_org_code",
+            )
+        ]
+        # indexes = [
+        #     models.Index(fields=["organization"], name="idx_price_group_org"),
+        # ]
+
+    def __str__(self) -> str:
+        return f"{self.price_group_code} — {self.price_group_description or 'Price Group'}"
+
+
+# ===== FILE: apps/pricing/models/tax_class.py =====
+# Created according to the user's Copilot Base Instructions.
+"""
+-- =========================
+-- TABLE: tax_class
+-- =========================
+CREATE TABLE public.tax_class (
+  id           INTEGER       PRIMARY KEY NOT NULL,
+  name         VARCHAR(100)  NOT NULL,
+  rate         NUMERIC(5,4)  NOT NULL,   -- z.B. 0.1900 (=19%)
+  created_at   TIMESTAMPTZ   NOT NULL DEFAULT statement_timestamp(),
+  updated_at   TIMESTAMPTZ   NOT NULL DEFAULT statement_timestamp(),
+  CONSTRAINT uniq_tax_class_name UNIQUE (name),
+  CONSTRAINT ck_tax_class_rate CHECK (rate >= 0 AND rate <= 1)
+);
+CREATE INDEX idx_tax_class_rate ON public.tax_class (rate);
+"""
+from __future__ import annotations
+
+from django.db import models
+from django.core.validators import MinValueValidator, MaxValueValidator
+from django.db.models.functions import Now
+from django.db.models import Q
+
+
+class TaxClass(models.Model):
+    #id = models.AutoField(primary_key=True)
+    name = models.CharField(max_length=100, unique=True)
+    rate = models.DecimalField(
+        max_digits=5, decimal_places=4,
+        validators=[MinValueValidator(0), MaxValueValidator(1)]
+    )
+
+    created_at = models.DateTimeField(db_default=Now(), editable=False)
+    updated_at = models.DateTimeField(db_default=Now(), editable=False)
+
+    def __str__(self) -> str:
+        return f"{self.name} ({self.rate})"
+
+    class Meta:
+        db_table = "tax_class"
+        indexes = [
+            models.Index(fields=("rate",), name="idx_tax_class_rate"),
+        ]
+        constraints = [
+            models.CheckConstraint(
+                name="ck_tax_class_rate",
+                check=Q(rate__gte=0) & Q(rate__lte=1),
+            ),
+        ]
+
+
+
+
+# ===== FILE: apps/pricing/models/sales_channel_variant_price.py =====
+# apps/pricing/models/sales_channel_variant_price.py
+# Created according to the user's Copilot Base Instructions.
+
+from __future__ import annotations
+
+from django.db import models
+from django.core.validators import MinValueValidator
+from django.db.models import Q
+from django.db.models.functions import Now
+
+
+class SalesChannelVariantPrice(models.Model):
+    # id = models.BigAutoField(primary_key=True)
+
+    # Organization
+    organization = models.ForeignKey(
+        "core.Organization",
+        on_delete=models.PROTECT,
+        related_name="sales_channel_variant_prices",
+    )
+
+    # Relations
+    price_list = models.ForeignKey(
+        "pricing.PriceList",
+        on_delete=models.PROTECT,
+        related_name="sales_channel_variant_prices",
+    )
+
+    channel_variant = models.ForeignKey(
+        "catalog.ChannelVariant",
+        on_delete=models.PROTECT,
+        related_name="sales_channel_variant_prices",
+    )
+
+    valid_from = models.DateTimeField()
+
+    # Values / timeframe
+    price = models.DecimalField(
+        max_digits=12,
+        decimal_places=4,
+        validators=[MinValueValidator(0)],
+    )
+
+    valid_to = models.DateTimeField(null=True, blank=True)
+    need_update = models.BooleanField(default=False)  # Flag to indicate if the price needs to be updated
+
+    # DB defaults (Postgres sets timestamps)
+    created_at = models.DateTimeField(db_default=Now(), editable=False)
+    updated_at = models.DateTimeField(db_default=Now(), editable=False)
+
+    def __str__(self) -> str:
+        return (
+            f"[org={self.organization}] {self.price_list}/{self.channel_variant} "
+            f"@ {self.price} from {self.valid_from}"
+        )
+
+    class Meta:
+        # db_table = "price"
+        # indexes = [
+        #     models.Index(fields=("organization",), name="idx_price_org"),
+        #     models.Index(fields=("price_list", "channel_variant"), name="idx_price_pricelist_variant"),
+        #     models.Index(fields=("channel_variant", "price_list"), name="idx_price_variant_pricelist"),
+        #     models.Index(fields=("valid_from",), name="idx_price_valid_from"),
+        #     # Partial index (current price): valid_to IS NULL
+        #     models.Index(
+        #         fields=("price_list", "channel_variant"),
+        #         name="idx_price_current",
+        #         condition=Q(valid_to__isnull=True),
+        #     ),
+        # ]
+        constraints = [
+            models.UniqueConstraint(
+                fields=("organization", "price_list", "channel_variant", "valid_from"),
+                name="uniq_channel_var_price_valid",
+            ),
+            models.CheckConstraint(
+                check=Q(price__gte=0),
+                name="ck_price_price_nonneg",
+            ),
+        ]
+
+
+
+# ===== FILE: apps/pricing/models/price_list.py =====
+# Created according to the user's Copilot Base Instructions.
+
+from __future__ import annotations
+
+from django.db import models
+from django.db.models.functions import Now
+
+
+class PriceList(models.Model):
+    #id = models.AutoField(primary_key=True)
+
+    organization = models.ForeignKey(
+        "core.Organization",
+        on_delete=models.PROTECT,
+        related_name="price_lists",
+    )
+
+    price_list_code = models.CharField(max_length=20)
+    price_list_description = models.CharField(max_length=200)
+    kind = models.CharField(max_length=1)  # 'S' or 'P'
+
+    currency = models.ForeignKey(
+        "core.Currency",
+        on_delete=models.PROTECT,
+        related_name="price_lists",
+    )
+
+    is_active = models.BooleanField(default=True)
+    created_at = models.DateTimeField(db_default=Now(), editable=False)
+    updated_at = models.DateTimeField(db_default=Now(), editable=False)
+
+    def __str__(self) -> str:
+        return f"[{self.organization}] {self.price_list_code} ({self.kind})"
+
+    class Meta:
+        # db_table = "price_list"
+        # indexes = [
+        #     models.Index(fields=("organization",), name="idx_price_list_org"),
+        #     models.Index(fields=("is_active",), name="idx_price_list_active"),
+        #     models.Index(fields=("kind",), name="idx_price_list_kind"),
+        # ]
+        constraints = [
+            # (org_code, price_list_code) unique
+            models.UniqueConstraint(
+                fields=("organization", "price_list_code"),
+                name="uniq_price_list_org_code",
+            ),
+            # Guard für Org-Konsistenz (für spätere price-Guards)
+            models.UniqueConstraint(
+                fields=("organization", "id"),
+                name="uniq_price_list_org_id",
+            ),
+            models.CheckConstraint(
+                name="ck_price_list_kind",
+                check=models.Q(kind__in=["S", "P"]),
+            ),
+        ]
+
+
+# ===== FILE: apps/catalog/models/product_variant.py =====
+# apps/catalog/models/product_variant.py
+# Created according to the user's permanent Copilot Base Instructions.
+from __future__ import annotations
+
+from django.db import models
+from django.db.models import CheckConstraint, Q
+from django.db.models.functions import Now
+
+
+class ProductVariant(models.Model):
+    """
+    Sellable unit (SKU). Holds SKU/EAN, packaging, logistics data,
+    order constraints, availability, and marketing flags.
+    """
+
+    organization = models.ForeignKey(
+        "core.Organization",
+        on_delete=models.PROTECT,
+        related_name="product_variants",
+    )
+    product = models.ForeignKey(
+        "catalog.Product",
+        on_delete=models.PROTECT,
+        related_name="product_variants",
+    )
+    packing = models.ForeignKey(
+        "catalog.Packing",
+        on_delete=models.PROTECT,
+        related_name="product_variants",
+    )
+    origin = models.ForeignKey(
+        "catalog.Origin",
+        on_delete=models.PROTECT,
+        related_name="product_variants",
+    )
+    state = models.ForeignKey(
+        "catalog.State",
+        on_delete=models.PROTECT,
+        related_name="product_variants",
+    )
+
+    # Identity & scanning
+    sku = models.CharField(max_length=120)
+    ean = models.CharField(
+        max_length=14,
+        null=True,
+        blank=True,
+        db_index=True,
+        help_text="Standardized GTIN/EAN code (8, 12, 13, or 14 digits).",
+    )
+    barcode = models.CharField(
+        max_length=64,
+        null=True,
+        blank=True,
+        help_text="Non-standard or supplier-specific barcode (may be alphanumeric).",
+    )
+
+    # Logistics & classification
+    customs_code = models.IntegerField(null=True, blank=True)
+    weight = models.DecimalField(max_digits=10, decimal_places=3, null=True, blank=True)
+    width = models.DecimalField(max_digits=10, decimal_places=3, null=True, blank=True)
+    height = models.DecimalField(max_digits=10, decimal_places=3, null=True, blank=True)
+    length = models.DecimalField(max_digits=10, decimal_places=3, null=True, blank=True)
+
+    eclass_code = models.CharField(
+        max_length=16,
+        null=True,
+        blank=True,
+        help_text="International eCl@ss classification code (e.g. 44070702).",
+    )
+
+    # Stock & availability
+    stock_quantity = models.IntegerField(null=True, blank=True)
+    available_stock = models.IntegerField(null=True, blank=True)
+    is_available = models.BooleanField(
+        default=False,
+        help_text="Availability flag as provided by supplier API.",
+    )
+    shipping_free = models.BooleanField(default=False)
+
+    # Order constraints
+    min_purchase = models.IntegerField(default=1)
+    max_purchase = models.IntegerField(null=True, blank=True)
+    purchase_steps = models.IntegerField(default=1)
+
+    # Marketing
+    is_topseller = models.BooleanField(
+        default=False,
+        help_text="Flag indicating this variant is marked as top seller in the shop.",
+    )
+
+    is_active = models.BooleanField(default=True)
+
+    created_at = models.DateTimeField(db_default=Now(), editable=False)
+    updated_at = models.DateTimeField(db_default=Now(), editable=False)
+
+    def __str__(self) -> str:
+        return f"[org={self.organization}] SKU={self.sku} (product_id={self.product_id})"
+
+    class Meta:
+        constraints = [
+            CheckConstraint(check=Q(weight__gte=0), name="ck_variant_weight_nonneg"),
+            models.UniqueConstraint(fields=("organization", "sku"), name="uniq_variant_org_sku"),
+            models.UniqueConstraint(fields=("organization", "id"), name="uniq_variant_org_id"),
+            models.UniqueConstraint(
+                fields=("organization", "product", "packing", "origin", "state"),
+                name="uniq_variant_org_product_pack_origin_state",
+            ),
+        ]
+
+
+# ===== FILE: apps/catalog/models/origin.py =====
+#!/usr/bin/env python3
+# Created according to the user's permanent Copilot Base Instructions.
+from __future__ import annotations
+from django.db import models
+
+
+class Origin(models.Model):
+    """Origin master data (single-letter code)."""
+
+    origin_code = models.CharField(
+        max_length=1,
+        primary_key=True,
+        help_text="Single-letter origin code.",
+    )
+    origin_description = models.CharField(
+        max_length=100,
+        blank=True,
+        help_text="Optional description/name of the origin.",
+    )
+
+    class Meta:
+        #db_table = "origin"
+        verbose_name = "Origin"
+        verbose_name_plural = "Origins"
+
+    def __str__(self) -> str:
+        return f"{self.origin_code} — {self.origin_description or 'Origin'}"
+
+
+
+# ===== FILE: apps/catalog/models/state.py =====
+#!/usr/bin/env python3
+# Created according to the user's permanent Copilot Base Instructions.
+from __future__ import annotations
+from django.db import models
+
+
+class State(models.Model):
+    """State master data (single-letter code)."""
+
+    state_code = models.CharField(
+        max_length=1,
+        primary_key=True,
+        help_text="Single-letter state code.",
+    )
+    state_description = models.CharField(
+        max_length=100,
+        blank=True,
+        help_text="Optional description/name of the state.",
+    )
+
+    class Meta:
+        #db_table = "state"
+        verbose_name = "State"
+        verbose_name = "State"
+        verbose_name_plural = "States"
+
+    def __str__(self) -> str:
+        return f"{self.state_code} — {self.state_description or 'State'}"
+
+
+
+# ===== FILE: apps/catalog/models/product.py =====
+# apps/catalog/models/product.py
+# Created according to the user's permanent Copilot Base Instructions.
+from __future__ import annotations
+
+from django.db import models
+from django.db.models import F, Value, Func
+from django.db.models.functions import Lower, Now
+
+
+class RegexpReplace(Func):
+    """PostgreSQL REGEXP_REPLACE(source, pattern, replacement [, flags])."""
+    function = "REGEXP_REPLACE"
+    template = "%(function)s(%(expressions)s)"
+
+
+class Product(models.Model):
+    """
+    Product master data (shared across variants).
+    Mirrors supplier API fields plus ERP/Shop attributes.
+    """
+
+    organization = models.ForeignKey(
+        "core.Organization",
+        on_delete=models.PROTECT,
+        related_name="products",
+    )
+
+    name = models.CharField(max_length=200)
+    slug = models.CharField(max_length=200)
+
+    manufacturer = models.ForeignKey(
+        "catalog.Manufacturer",
+        on_delete=models.PROTECT,
+        related_name="products",
+    )
+
+    manufacturer_part_number = models.CharField(max_length=100)
+
+    manufacturer_part_number_norm = models.GeneratedField(
+        expression=RegexpReplace(
+            RegexpReplace(
+                RegexpReplace(
+                    RegexpReplace(
+                        RegexpReplace(
+                            Lower(F("manufacturer_part_number")),
+                            Value("[ßẞ]"), Value("ss"), Value("g")
+                        ),
+                        Value("ä"), Value("ae"), Value("g")
+                    ),
+                    Value("ö"), Value("oe"), Value("g")
+                ),
+                Value("ü"), Value("ue"), Value("g")
+            ),
+            Value("[^0-9a-z]+"),
+            Value(""),
+            Value("g"),
+        ),
+        output_field=models.CharField(max_length=100),
+        db_persist=True,
+        editable=False,
+    )
+
+    product_group = models.ForeignKey(
+        "catalog.ProductGroup",
+        on_delete=models.PROTECT,
+    )
+
+    description = models.TextField(
+        null=True,
+        blank=True,
+        help_text="Full product description (rich text / HTML).",
+    )
+
+    # SEO / Marketing
+    meta_title = models.CharField(max_length=255, null=True, blank=True)
+    meta_description = models.TextField(null=True, blank=True)
+    keywords = models.CharField(max_length=500, null=True, blank=True)
+
+    # Shop flags
+    is_new = models.BooleanField(default=False)
+    is_closeout = models.BooleanField(default=False)
+    release_date = models.DateField(null=True, blank=True)
+
+    is_active = models.BooleanField(default=True)
+
+    created_at = models.DateTimeField(db_default=Now(), editable=False)
+    updated_at = models.DateTimeField(db_default=Now(), editable=False)
+
+    def __str__(self) -> str:
+        return f"[{self.organization}] {self.name} ({self.slug})"
+
+    class Meta:
+        constraints = [
+            models.UniqueConstraint(
+                fields=("organization", "slug"),
+                name="uniq_product_org_slug",
+            ),
+            models.UniqueConstraint(
+                fields=("organization", "manufacturer", "manufacturer_part_number_norm"),
+                name="uniq_product_org_manu_mpn_norm",
+            ),
+            models.UniqueConstraint(
+                fields=("organization", "id"),
+                name="uniq_product_org_id",
+            ),
+        ]
+
+
+
+
+# ===== FILE: apps/catalog/models/channel_variant.py =====
+# apps/catalog/models/channel_variant.py
+# Created according to the user's Copilot Base Instructions.
+# the
+
+from __future__ import annotations
+
+from django.db import models
+from django.db.models import Q
+from django.db.models.functions import Now
+
+
+class ChannelVariant(models.Model):
+    """
+    A product variant in a sales channel (e.g. a webshop).
+    Links a ProductVariant to a Channel, with additional fields for
+    publication status, external IDs, and metadata.
+    Represents the availability and configuration of a specific product variant
+    within a specific sales channel.
+    Each ChannelVariant is unique per (organization, channel, variant).
+    1:n relation: A ProductVariant can be linked to multiple Channels via ChannelVariant.
+    1:n relation: A Channel can have multiple ProductVariants via ChannelVariant.
+    1:1 relation: A ChannelVariant links exactly one ProductVariant to one Channel.
+    1:1 relation: A ChannelVariant belongs to exactly one Organization.
+    """
+    #id = models.BigAutoField(primary_key=True)
+
+    organization = models.ForeignKey(
+        "core.Organization",
+        on_delete=models.PROTECT,
+        related_name="channel_variants",
+    )
+
+    channel = models.ForeignKey(
+        "catalog.Channel",
+        on_delete=models.PROTECT,
+        related_name="channel_variants",
+    )
+
+    variant = models.ForeignKey(
+        "catalog.ProductVariant",
+        on_delete=models.PROTECT,
+        related_name="channel_variants",
+    )
+
+    publish = models.BooleanField(default=False)
+    is_active = models.BooleanField(default=True)
+    need_shop_update = models.BooleanField(default=False)
+
+    shop_product_id = models.CharField(max_length=100, null=True, blank=True)
+    shop_variant_id = models.CharField(max_length=100, null=True, blank=True)
+
+    last_synced_at = models.DateTimeField(null=True, blank=True)
+    last_error = models.TextField(null=True, blank=True)
+
+    # Postgres JSONB (Django -> JSONField)
+    meta_json = models.JSONField(null=True, blank=True)
+
+    created_at = models.DateTimeField(db_default=Now(), editable=False)
+    updated_at = models.DateTimeField(db_default=Now(), editable=False)
+
+    def __str__(self) -> str:
+        return f"[org={self.organization}] ch={self.channel} v={self.variant} (pub={self.publish})"
+
+    class Meta:
+        # db_table = "channel_variant"
+        # indexes = [
+        #     models.Index(fields=("organization",), name="idx_channel_variant_org"),
+        #     models.Index(fields=("channel",), name="idx_channel_variant_channel"),
+        #     models.Index(fields=("variant",), name="idx_channel_variant_variant"),
+        #     models.Index(fields=("publish",), name="idx_channel_variant_publish"),
+        #     models.Index(fields=("is_active",), name="idx_channel_variant_active"),
+        #     models.Index(fields=("need_shop_update",), name="ix_chvar_needupd"),
+        #     models.Index(fields=("last_synced_at",), name="ix_chvar_lastsync"),
+        # ]
+        constraints = [
+            # Eindeutig pro (Org, Channel, Variante)
+            models.UniqueConstraint(
+                fields=("organization", "channel", "variant"),
+                name="uniq_channel_variant",
+            ),
+            # Partial-unique auf externe IDs je Channel (nur wenn gesetzt)
+            # models.UniqueConstraint(
+            #     fields=("channel", "shop_item_id"),
+            #     name="uniq_channel_item_ext",
+            #     condition=Q(shop_item_id__isnull=False) & ~Q(shop_item_id=""),
+            # ),
+            # models.UniqueConstraint(
+            #     fields=("channel", "shop_variant_id"),
+            #     name="uniq_channel_variant_ext",
+            #     condition=Q(shop_variant_id__isnull=False) & ~Q(shop_variant_id=""),
+            # ),
+        ]
+
+
+
+# ===== FILE: apps/catalog/models/product_media.py =====
+# apps/catalog/models/product_media.py
+# Created according to the user's Copilot Base Instructions.
+
+
+
+from __future__ import annotations
+
+from django.db import models
+from django.db.models.functions import Now
+
+
+class ProductMedia(models.Model):
+    id = models.BigAutoField(primary_key=True)
+
+    # org_code SMALLINT → FK core.Organization(org_code)
+    organization = models.ForeignKey(
+        "core.Organization",
+        on_delete=models.PROTECT,
+        related_name="products_media",
+
+    )
+
+    # product / variant Bezug
+    product = models.ForeignKey(
+        "catalog.Product",
+        on_delete=models.PROTECT,
+        related_name="products_media",
+
+    )
+    variant = models.ForeignKey(
+        "catalog.ProductVariant",
+        on_delete=models.PROTECT,
+        null=True,
+        blank=True,
+        related_name="products_media",
+    )
+
+    # Medien-Metadaten
+    role = models.CharField(max_length=20, default="gallery")
+    sort_order = models.SmallIntegerField(default=0)
+    alt_text = models.CharField(max_length=200, default="", blank=True)
+
+    media_url = models.TextField()
+    mime = models.CharField(max_length=100, null=True, blank=True)
+    width_px = models.IntegerField(null=True, blank=True)
+    height_px = models.IntegerField(null=True, blank=True)
+    file_size = models.IntegerField(null=True, blank=True)
+
+    is_active = models.BooleanField(default=True)
+    created_at = models.DateTimeField(db_default=Now(), editable=False)
+    updated_at = models.DateTimeField(db_default=Now(), editable=False)
+
+    def __str__(self) -> str:
+        scope = f"variant={self.variant}" if self.variant else f"product={self.product}"
+        return f"[org={self.organization}] {scope} {self.role} #{self.id}"
+
+    class Meta:
+        #db_table = "product_media"
+        indexes = [
+            models.Index(fields=("organization",), name="idx_product_media_org"),
+            models.Index(fields=("product",), name="idx_product_media_product"),
+            models.Index(fields=("variant",), name="idx_product_media_variant"),
+            models.Index(fields=("role", "sort_order"), name="idx_product_media_role_order"),
+            models.Index(fields=("is_active",), name="idx_product_media_active"),
+        ]
+
+
+
+# ===== FILE: apps/catalog/models/packing.py =====
+#!/usr/bin/env python3
+# Created according to the permanently stored Copilot Base Instructions.
+from __future__ import annotations
+
+from decimal import Decimal
+
+from django.db import models
+
+
+class Packing(models.Model):
+    """Represents a packaging unit definition within an organization.
+
+    Mirrors the given SQL schema:
+      CREATE TABLE packing (
+          id SERIAL PRIMARY KEY,
+          org_code SMALLINT NOT NULL,
+          packing_code SMALLINT NOT NULL,
+          amount NUMERIC(10, 3) DEFAULT 1.0,
+          packing_short_description VARCHAR(20) NOT NULL,
+          packing_description VARCHAR(200)
+      );
+      ALTER TABLE packing
+        ADD CONSTRAINT fk_packing_org
+          FOREIGN KEY (org_code) REFERENCES org(org_code) ON DELETE RESTRICT;
+      ALTER TABLE packing
+        ADD CONSTRAINT uniq_packing_packing_code_org_code
+          UNIQUE (org_code, packing_code);
+    """
+
+    # Match SERIAL (int4). If the project default is BigAutoField, keep this explicit AutoField.
+    #id = models.AutoField(primary_key=True)
+
+    # FK to Organization by its code field, stored in column "org_code".
+    organization = models.ForeignKey(
+        "core.Organization",
+        on_delete=models.PROTECT,  # ON DELETE RESTRICT
+        related_name="packings",
+    )
+
+    packing_code = models.SmallIntegerField()
+    amount = models.DecimalField(
+        max_digits=10,
+        decimal_places=3,
+        default=Decimal("1.000"),
+        null=True,  # nullable in SQL; default still applies when not provided
+        help_text="Multiplier amount for this packing unit.",
+    )
+    packing_short_description = models.CharField(max_length=20)
+    packing_description = models.CharField(max_length=200, blank=True, null=True)
+
+    class Meta:
+        constraints = [
+            models.UniqueConstraint(
+                fields=["organization", "packing_code"],
+                name="uniq_packing_packing_code_org_code",
+            ),
+        ]
+        # indexes = [
+        #     models.Index(fields=["organization"], name="idx_packing_org"),
+        # ]
+
+    def __str__(self) -> str:
+        """Human-readable representation used in admin and logs."""
+        return f"{self.packing_code} — {self.packing_short_description}"
+
+
+# ===== FILE: apps/catalog/models/manufacturer.py =====
+#!/usr/bin/env python3
+# Created according to the user's permanent Copilot Base Instructions.
+from __future__ import annotations
+from django.db import models
+
+
+class Manufacturer(models.Model):
+    """Manufacturer master data (brand/vendor entity for catalog)."""
+
+    manufacturer_code = models.SmallIntegerField(
+        primary_key=True,
+        help_text="Business code for the manufacturer (small integer).",
+    )
+    manufacturer_description = models.CharField(
+        max_length=200,
+        blank=True,
+        help_text="Optional description/name of the manufacturer.",
+    )
+
+    class Meta:
+        #db_table = "manufacturer"
+        verbose_name = "Manufacturer"
+        verbose_name_plural = "Manufacturers"
+
+    def __str__(self) -> str:
+        return (
+            f"{self.manufacturer_code} — "
+            f"{self.manufacturer_description or 'Manufacturer'}"
+        )
+
+
+# ===== FILE: apps/catalog/models/product_group.py =====
+# apps/catalog/models/product_group.py
+# Created according to the user's permanent Copilot Base Instructions.
+from __future__ import annotations
+
+from django.db import models
+
+
+class ProductGroup(models.Model):
+    """Product group master data, scoped by organization."""
+
+    # Keep 32-bit PK (SERIAL-like) to match the previous model behavior.
+    #id = models.AutoField(primary_key=True)
+
+    # FK to core.Organization(org_code); DB column stays 'org_code'
+    organization = models.ForeignKey(
+        "core.Organization",
+        on_delete=models.PROTECT,  # maps to ON DELETE RESTRICT
+        related_name="product_groups",
+    )
+
+    # ⚠ Field names remain unchanged to avoid unintended schema changes.
+    product_group_code = models.CharField(
+        max_length=20,
+        help_text="Product group code (unique within organization).",
+    )
+    product_group_description = models.CharField(
+        max_length=200,
+        blank=True,
+        help_text="Optional description/name of the product group.",
+    )
+
+    def __str__(self) -> str:
+        return f"{self.item_group_code} — {self.item_group_description or 'Product Group'}"
+
+    class Meta:
+        verbose_name = "Product Group"
+        verbose_name_plural = "Product Groups"
+        constraints = [
+            models.UniqueConstraint(
+                fields=["organization", "product_group_code"],
+                name="uniq_product_group_org_item_group_code",
+            ),
+            # NEU: für den Composite-Guard benötigt
+            models.UniqueConstraint(
+                fields=["organization", "id"],
+                name="uniq_product_group_org_id",
+            ),
+        ]
+        # indexes = [
+        #     models.Index(fields=["organization"], name="idx_product_group_org_code"),
+        # ]
+
+
+
+# ===== FILE: apps/catalog/models/channel.py =====
+# apps/catalog/models/channel.py
+# Created according to the user's Copilot Base Instructions.
+
+
+
+from __future__ import annotations
+
+from django.db import models
+from django.db.models.functions import Now
+
+
+class Channel(models.Model):
+    id = models.AutoField(primary_key=True)
+
+    organization = models.ForeignKey(
+        "core.Organization",
+        on_delete=models.PROTECT,
+        related_name="channels",
+    )
+
+    channel_code = models.CharField(max_length=20)
+    channel_name = models.CharField(max_length=200)
+
+    kind = models.CharField(max_length=50, default="shop")  # 'shop' | 'marketplace'
+
+    base_currency = models.ForeignKey(
+        "core.Currency",
+        on_delete=models.PROTECT,
+        related_name="channels",
+
+    )
+
+    is_active = models.BooleanField(default=True)
+    created_at = models.DateTimeField(db_default=Now(), editable=False)
+    updated_at = models.DateTimeField(db_default=Now(), editable=False)
+
+    def __str__(self) -> str:
+        return f"[{self.organization}] {self.channel_code} — {self.channel_name}"
+
+    class Meta:
+        #db_table = "channel"
+        # indexes = [
+        #     models.Index(fields=("organization",), name="idx_channel_org"),
+        #     models.Index(fields=("is_active",), name="idx_channel_active"),
+        #     models.Index(fields=("kind",), name="idx_channel_kind"),
+        # ]
+        constraints = [
+            models.UniqueConstraint(
+                fields=("organization", "channel_code"),
+                name="uniq_channel_org_code",
+            ),
+            models.UniqueConstraint(
+                fields=("organization", "id"),
+                name="uniq_channel_org_id",
+            ),
+            # Falls du den enum-artigen Check möchtest, aktivieren:
+            # models.CheckConstraint(
+            #     name="ck_channel_kind",
+            #     check=models.Q(kind__in=["shop", "marketplace"]),
+            # ),
+        ]
+
+
+# ===== FILE: apps/sales/models/sales_order_line.py =====
+# apps/sales/models/sales_order_line.py
+#!/usr/bin/env python3
+# Created according to the user's permanent Copilot Base Instructions.
+from __future__ import annotations
+
+from django.db import models
+from django.db.models import Q
+from django.db.models.functions import Now
+from django.core.validators import MinValueValidator
+
+
+class SalesOrderLine(models.Model):
+    #id = models.BigAutoField(primary_key=True)
+
+    organization = models.ForeignKey(
+        "core.Organization",
+        on_delete=models.PROTECT,
+        related_name="sales_order_lines",
+    )
+
+    sales_order = models.ForeignKey(
+        "sales.SalesOrder",
+        on_delete=models.PROTECT,
+        related_name="sales_order_lines",
+    )
+
+    row_no = models.SmallIntegerField()  # unique within (org, sales_order)
+
+    variant = models.ForeignKey(
+        "catalog.ProductVariant",
+        on_delete=models.PROTECT,
+        related_name="sales_order_lines",
+    )
+
+    qty = models.DecimalField(
+        max_digits=12,
+        decimal_places=3,
+        validators=[MinValueValidator(0.001)],
+    )
+    price_at_order = models.DecimalField(
+        max_digits=12,
+        decimal_places=4,
+        validators=[MinValueValidator(0)],
+    )
+    note = models.TextField(null=True, blank=True)
+
+    is_active = models.BooleanField(default=True)
+    created_at = models.DateTimeField(db_default=Now(), editable=False)
+    updated_at = models.DateTimeField(db_default=Now(), editable=False)
+
+    def __str__(self) -> str:
+        return f"[org={self.organization}] SO={self.sales_order} #{self.row_no} -> VAR={self.variant}"
+
+    class Meta:
+        # db_table = "sales_order_line"
+        # indexes = [
+        #     models.Index(fields=("organization",), name="idx_sol_org"),
+        #     models.Index(fields=("sales_order",), name="idx_sol_so"),
+        #     models.Index(fields=("variant",), name="idx_sol_variant"),
+        #     models.Index(fields=("is_active",), name="idx_sol_act"),
+        # ]
+        constraints = [
+            models.UniqueConstraint(
+                fields=("organization", "sales_order", "row_no"),
+                name="uniq_sol_org_so_row",
+            ),
+            models.CheckConstraint(
+                name="ck_sol_qty_pos",
+                check=Q(qty__gt=0),
+            ),
+            models.CheckConstraint(
+                name="ck_sol_price_nn",
+                check=Q(price_at_order__gte=0),
+            ),
+        ]
+
+
+
+
+# ===== FILE: apps/sales/models/sales_order.py =====
+# apps/sales/models/sales_order.py
+#!/usr/bin/env python3
+# Created according to the user's permanent Copilot Base Instructions.
+from __future__ import annotations
+
+from django.db import models
+from django.db.models import Q
+from django.db.models.functions import Now
+
+
+class SalesOrder(models.Model):
+    """Sales order header, scoped by organization."""
+
+    #id = models.BigAutoField(primary_key=True)
+
+    # Tenant
+    organization = models.ForeignKey(
+        "core.Organization",
+        on_delete=models.PROTECT,
+        related_name="sales_orders",
+    )
+
+    # Business relations
+    customer = models.ForeignKey(
+        "partners.Customer",
+        on_delete=models.PROTECT,
+        related_name="sales_orders",
+    )
+
+    order_number = models.CharField(max_length=30)  # unique per org
+
+    status = models.CharField(
+        max_length=20,
+        default="draft",  # draft|confirmed|shipped|invoiced|cancelled
+    )
+
+    currency = models.ForeignKey(
+        "core.Currency",
+        on_delete=models.PROTECT,
+        related_name="sales_orders",
+    )
+
+    expected_date = models.DateField(null=True, blank=True)
+    notes = models.TextField(null=True, blank=True)
+
+    is_active = models.BooleanField(default=True)
+
+    # DB-managed timestamps
+    created_at = models.DateTimeField(db_default=Now(), editable=False)
+    updated_at = models.DateTimeField(db_default=Now(), editable=False)
+
+    def __str__(self) -> str:
+        return f"[org={self.organization}] SO {self.order_number} ({self.status})"
+
+    class Meta:
+        # db_table = "sales_order"
+        # indexes = [
+        #     models.Index(fields=("organization",), name="idx_so_org"),
+        #     models.Index(fields=("customer",),    name="idx_so_customer"),
+        #     models.Index(fields=("status",),      name="idx_so_status"),
+        #     models.Index(fields=("expected_date",), name="idx_so_expected"),
+        # ]
+        constraints = [
+            models.UniqueConstraint(
+                fields=("organization", "order_number"),
+                name="uniq_so_org_number",
+            ),
+            models.UniqueConstraint(
+                fields=("organization", "id"),
+                name="uniq_so_org_id",
+            ),
+            models.CheckConstraint(
+                name="ck_so_status",
+                check=Q(status__in=["draft", "confirmed", "shipped", "invoiced", "cancelled"]),
+            ),
+        ]
+
+
+
+# ===== FILE: apps/partners/models/supplier.py =====
+# apps/partners/models/supplier.py
+# Created according to the user's permanent Copilot Base Instructions.
+from __future__ import annotations
+
+from django.db import models
+from django.db.models.functions import Now
+
+
+class Supplier(models.Model):
+    """Supplier master data, scoped by organization (org_code)."""
+
+    # PK BIGINT
+    #id = models.BigAutoField(primary_key=True)
+
+    # FK zu core.Organization(org_code); DB column bleibt 'org_code'
+    organization = models.ForeignKey(
+        "core.Organization",
+        on_delete=models.PROTECT,  # ON DELETE RESTRICT
+        related_name="suppliers",
+    )
+
+    supplier_code = models.CharField(
+        max_length=20,
+    )
+    is_active = models.BooleanField(
+        default=True,
+    )
+    supplier_description = models.CharField(
+        max_length=200,
+        blank=True,
+        default="",
+    )
+
+    # --- Common supplier fields (all optional; appended to preserve order) ---
+    contact_name = models.CharField(
+        max_length=100, blank=True, default="", help_text="Primary contact person name."
+    )
+    email = models.CharField(
+        max_length=200, blank=True, default="", help_text="Contact email address."
+    )  # Use CharField to avoid DB-specific validators for now.
+    phone = models.CharField(
+        max_length=50, blank=True, default="", help_text="Primary phone number."
+    )
+    website = models.CharField(
+        max_length=200, blank=True, default="", help_text="Website URL."
+    )
+    tax_id = models.CharField(
+        max_length=50, blank=True, default="", help_text="Tax/VAT identifier."
+    )
+    address_line1 = models.CharField(
+        max_length=200, blank=True, default="", help_text="Address line 1."
+    )
+    address_line2 = models.CharField(
+        max_length=200, blank=True, default="", help_text="Address line 2."
+    )
+    postal_code = models.CharField(
+        max_length=20, blank=True, default="", help_text="Postal/ZIP code."
+    )
+    city = models.CharField(
+        max_length=100, blank=True, default="", help_text="City."
+    )
+    country_code = models.CharField(
+        max_length=2, blank=True, default="", help_text="ISO 3166-1 alpha-2 country code."
+    )
+    payment_terms = models.CharField(
+        max_length=50, blank=True, default="", help_text="Payment terms shorthand (e.g., NET30)."
+    )
+    is_preferred = models.BooleanField(
+        default=False, help_text="Mark as preferred supplier."
+    )
+    lead_time_days = models.SmallIntegerField(
+        default=0, help_text="Typical lead time in days."
+    )
+
+    # Timestamps for parity with other tables
+    created_at = models.DateTimeField(db_default=Now(), editable=False)
+    updated_at = models.DateTimeField(db_default=Now(), editable=False)
+
+    def __str__(self) -> str:
+        return f"{self.supplier_code} — {self.supplier_description or 'Supplier'}"
+
+    class Meta:
+        # db_table = "supplier"
+        verbose_name = "Supplier"
+        verbose_name_plural = "Suppliers"
+        # indexes = [
+        #     models.Index(fields=["organization"], name="idx_supplier_org"),
+        # ]
+        constraints = [
+            models.UniqueConstraint(
+                fields=["organization", "supplier_code"],
+                name="uniq_supplier_org_code",
+            ),
+            models.UniqueConstraint(
+                fields=["organization", "id"],
+                name="uniq_supplier_org_id",
+            ),
+        ]
+
+
+# ===== FILE: apps/partners/models/customer.py =====
+# apps/partners/models/customer.py
+#!/usr/bin/env python3
+# Created according to the user's permanent Copilot Base Instructions.
+from __future__ import annotations
+
+from django.db import models
+from django.db.models.functions import Now
+
+
+class Customer(models.Model):
+    """Customer master data, scoped by organization (org_code)."""
+
+    #id = models.BigAutoField(primary_key=True)
+
+    # FK to core.Organization(org_code); DB column stays 'org_code'
+    organization = models.ForeignKey(
+        "core.Organization",
+        on_delete=models.PROTECT,  # ON DELETE RESTRICT
+        related_name="customers",
+    )
+
+    customer_code = models.CharField(
+        max_length=20,
+        help_text="Customer code (unique within organization).",
+    )
+    is_active = models.BooleanField(
+        default=True,
+        help_text="Whether the customer is active.",
+    )
+    customer_description = models.CharField(
+        max_length=200,
+        blank=True,
+        default="",
+        help_text="Optional description/name of the customer.",
+    )
+
+    # --- Common customer fields (all optional; appended to preserve order) ---
+    contact_name = models.CharField(
+        max_length=100, blank=True, default="", help_text="Primary contact person name."
+    )
+    email = models.CharField(
+        max_length=200, blank=True, default="", help_text="Contact email address."
+    )  # Keep CharField for cross-DB portability; can switch to EmailField later.
+    phone = models.CharField(
+        max_length=50, blank=True, default="", help_text="Primary phone number."
+    )
+    website = models.CharField(
+        max_length=200, blank=True, default="", help_text="Website URL."
+    )
+    tax_id = models.CharField(
+        max_length=50, blank=True, default="", help_text="Tax/VAT identifier."
+    )
+    address_line1 = models.CharField(
+        max_length=200, blank=True, default="", help_text="Address line 1."
+    )
+    address_line2 = models.CharField(
+        max_length=200, blank=True, default="", help_text="Address line 2."
+    )
+    postal_code = models.CharField(
+        max_length=20, blank=True, default="", help_text="Postal/ZIP code."
+    )
+    city = models.CharField(
+        max_length=100, blank=True, default="", help_text="City."
+    )
+    country_code = models.CharField(
+        max_length=2, blank=True, default="", help_text="ISO 3166-1 alpha-2 country code."
+    )
+    payment_terms = models.CharField(
+        max_length=50, blank=True, default="", help_text="Payment terms shorthand (e.g., NET30)."
+    )
+
+    # Timestamps to match project standard (DB defaults via NOW())
+    created_at = models.DateTimeField(db_default=Now(), editable=False)
+    updated_at = models.DateTimeField(db_default=Now(), editable=False)
+
+    def __str__(self) -> str:
+        return f"{self.customer_code} — {self.customer_description or 'Customer'}"
+
+    class Meta:
+        # db_table = "customer"
+        verbose_name = "Customer"
+        verbose_name_plural = "Customers"
+        # indexes = [
+        #     models.Index(fields=["organization"], name="idx_customer_org"),
+        #     models.Index(fields=["is_active"], name="idx_customer_active"),
+        # ]
+        constraints = [
+            models.UniqueConstraint(
+                fields=["organization", "customer_code"],
+                name="uniq_customer_org_code",
+            ),
+            models.UniqueConstraint(
+                fields=["organization", "id"],
+                name="uniq_customer_org_id",
+            ),
+        ]
+
+
+# ===== FILE: apps/procurement/models/purchase_order_line.py =====
+# apps/procurement/models/purchase_order_line.py
+# Created according to the user's permanent Copilot Base Instructions.
+
+
+from __future__ import annotations
+
+from django.db import models
+from django.db.models import Q
+from django.db.models.functions import Now
+from django.core.validators import MinValueValidator
+
+
+class PurchaseOrderLine(models.Model):
+    #id = models.BigAutoField(primary_key=True)
+
+    organization = models.ForeignKey(
+        "core.Organization",
+        on_delete=models.PROTECT,
+        related_name="purchase_order_lines",
+    )
+
+    purchase_order = models.ForeignKey(
+        "procurement.PurchaseOrder",
+        on_delete=models.PROTECT,
+        related_name="purchase_order_lines",
+    )
+    row_no = models.SmallIntegerField()  # unique je (org, po)
+
+    supplier_product = models.ForeignKey(
+        "procurement.SupplierProduct",
+        on_delete=models.PROTECT,
+        related_name="purchase_order_lines",
+    )
+
+    qty = models.DecimalField(
+        max_digits=12, decimal_places=3,
+        validators=[MinValueValidator(0.001)]
+    )
+    price_at_order = models.DecimalField(
+        max_digits=12, decimal_places=4,
+        validators=[MinValueValidator(0)]
+    )
+    note = models.TextField(null=True, blank=True)
+
+    is_active = models.BooleanField(default=True)
+    created_at = models.DateTimeField(db_default=Now(), editable=False)
+    updated_at = models.DateTimeField(db_default=Now(), editable=False)
+
+    def __str__(self) -> str:
+        return f"[org={self.organization}] PO={self.purchase_order} #{self.row_no} -> SP={self.supplier_product}"
+
+    class Meta:
+        # db_table = "purchase_order_line"
+        # indexes = [
+        #     models.Index(fields=("organization",), name="idx_pol_org"),
+        #     models.Index(fields=("purchase_order",), name="idx_pol_po"),
+        #     models.Index(fields=("supplier_product",), name="idx_pol_sp"),
+        #     models.Index(fields=("is_active",), name="idx_pol_act"),
+        # ]
+        constraints = [
+            models.UniqueConstraint(
+                fields=("organization", "purchase_order", "row_no"),
+                name="uniq_pol_org_po_row",
+            ),
+            models.CheckConstraint(
+                name="ck_pol_qty_pos",
+                check=Q(qty__gt=0),
+            ),
+            models.CheckConstraint(
+                name="ck_pol_price_nn",
+                check=Q(price_at_order__gte=0),
+            ),
+        ]
+
+
+
+# ===== FILE: apps/procurement/models/purchase_order.py =====
+# apps/procurement/models/purchase_order.py
+# Created according to the user's permanent Copilot Base Instructions.
+
+from __future__ import annotations
+
+from django.db import models
+from django.db.models import Q
+from django.db.models.functions import Now
+
+
+class PurchaseOrder(models.Model):
+    #id = models.BigAutoField(primary_key=True)
+
+    organization = models.ForeignKey(
+        "core.Organization",
+        on_delete=models.PROTECT,
+        related_name="purchase_orders",
+    )
+
+    supplier = models.ForeignKey(
+        "partners.Supplier",
+        on_delete=models.PROTECT,
+        related_name="purchase_orders",
+    )
+
+    order_number = models.CharField(max_length=30)  # unique je Org (s.u.)
+    status = models.CharField(max_length=20, default="draft")  # draft|approved|ordered|received|cancelled
+
+    currency = models.ForeignKey(
+        "core.Currency",
+        on_delete=models.PROTECT,
+        related_name="purchase_orders",
+    )
+
+    expected_date = models.DateField(null=True, blank=True)
+    notes = models.TextField(null=True, blank=True)
+
+    is_active = models.BooleanField(default=True)
+    created_at = models.DateTimeField(db_default=Now(), editable=False)
+    updated_at = models.DateTimeField(db_default=Now(), editable=False)
+
+    def __str__(self) -> str:
+        return f"[org={self.organization_}] PO {self.order_number} ({self.status})"
+
+    class Meta:
+        # db_table = "purchase_order"
+        # indexes = [
+        #     models.Index(fields=("organization",), name="idx_po_org"),
+        #     models.Index(fields=("supplier",),    name="idx_po_supplier"),
+        #     models.Index(fields=("status",),      name="idx_po_status"),
+        #     models.Index(fields=("expected_date",), name="idx_po_expected"),
+        # ]
+        constraints = [
+            models.UniqueConstraint(
+                fields=("organization", "order_number"),
+                name="uniq_po_org_number",
+            ),
+            models.CheckConstraint(
+                name="ck_po_status",
+                check=Q(status__in=["draft","approved","ordered","received","cancelled"]),
+            ),
+            models.UniqueConstraint(fields=("organization", "id"), name="uniq_po_org_id"),
+        ]
+
+
+# ===== FILE: apps/procurement/models/supplier_product.py =====
+# apps/procurement/models/supplier_product.py
+# Created according to the user's permanent Copilot Base Instructions.
+from __future__ import annotations
+
+from django.db import models
+from django.db.models import Q
+from django.db.models.functions import Now
+from django.core.validators import MinValueValidator
+
+
+class SupplierProduct(models.Model):
+    """
+    Links a ProductVariant with a specific supplier.
+    Holds supplier-specific identifiers, packaging,
+    ordering constraints and procurement metadata.
+    """
+
+    organization = models.ForeignKey(
+        "core.Organization",
+        on_delete=models.PROTECT,
+        related_name="supplier_products",
+    )
+
+    supplier = models.ForeignKey(
+        "partners.Supplier",
+        on_delete=models.PROTECT,
+        related_name="supplier_products",
+    )
+
+    variant = models.ForeignKey(
+        "catalog.ProductVariant",
+        on_delete=models.PROTECT,
+        related_name="supplier_products",
+    )
+
+    # Identification at supplier side
+    supplier_sku = models.CharField(
+        max_length=100,
+        help_text="Article number / SKU as used by the supplier."
+    )
+    supplier_description = models.CharField(
+        max_length=500,
+        blank=True,
+        default="",
+        help_text="Optional description as provided by supplier (may differ from catalog description).",
+    )
+
+    # Procurement attributes
+    pack_size = models.DecimalField(
+        max_digits=10,
+        decimal_places=3,
+        default=1,
+        validators=[MinValueValidator(0.001)],
+        help_text="Number of base units in one pack as sold by supplier.",
+    )
+    min_order_qty = models.DecimalField(
+        max_digits=10,
+        decimal_places=3,
+        default=0,
+        validators=[MinValueValidator(0)],
+        help_text="Minimum order quantity (MOQ) at supplier.",
+    )
+    lead_time_days = models.IntegerField(
+        default=0,
+        validators=[MinValueValidator(0)],
+        help_text="Standard lead time in days until delivery.",
+    )
+
+    # Flags
+    is_active = models.BooleanField(default=True)
+    is_preferred = models.BooleanField(
+        default=False,
+        help_text="Marks the preferred supplier for this variant."
+    )
+
+    notes = models.TextField(null=True, blank=True)
+
+    # Timestamps
+    created_at = models.DateTimeField(db_default=Now(), editable=False)
+    updated_at = models.DateTimeField(db_default=Now(), editable=False)
+
+    def __str__(self) -> str:
+        return (
+            f"[org={self.organization}] supplier={self.supplier} "
+            f"sku={self.supplier_sku} -> variant={self.variant.sku}"
+        )
+
+    class Meta:
+        constraints = [
+            models.UniqueConstraint(
+                fields=("organization", "variant", "supplier"),
+                name="uniq_supplier_product",
+            ),
+            models.CheckConstraint(
+                name="ck_supplier_packsize_positive", check=Q(pack_size__gt=0)
+            ),
+            models.CheckConstraint(
+                name="ck_supplier_moq_nonneg", check=Q(min_order_qty__gte=0)
+            ),
+            models.CheckConstraint(
+                name="ck_supplier_leadtime_nonneg", check=Q(lead_time_days__gte=0)
+            ),
+        ]
+
+
+# ===== FILE: apps/procurement/models/supplier_quantity_price.py =====
+# apps/procurement/models/supplier_quantity_price.py
+# Created according to the user's permanent Copilot Base Instructions.
+from __future__ import annotations
+
+from django.db import models
+from django.core.validators import MinValueValidator
+
+
+class SupplierQuantityPrice(models.Model):
+    """
+    Quantity-based price tier for a supplier's product.
+    Used only when SupplierPrice.unit_price is NULL.
+    """
+
+    supplier_price = models.ForeignKey(
+        "procurement.SupplierPrice",
+        on_delete=models.CASCADE,
+        related_name="quantity_prices",
+        help_text="Parent supplier price record this tier belongs to.",
+    )
+
+    min_quantity = models.DecimalField(
+        max_digits=10,
+        decimal_places=3,
+        validators=[MinValueValidator(0.001)],
+        help_text="Minimum order quantity for this tier.",
+    )
+    unit_price = models.DecimalField(
+        max_digits=12,
+        decimal_places=4,
+        validators=[MinValueValidator(0)],
+        help_text="Net purchase price per unit (without VAT).",
+    )
+
+    class Meta:
+        verbose_name = "Supplier Quantity Price"
+        verbose_name_plural = "Supplier Quantity Prices"
+        constraints = [
+            models.UniqueConstraint(
+                fields=("supplier_price", "min_quantity"),
+                name="uniq_supplier_quantity_price",
+            )
+        ]
+        ordering = ["min_quantity"]
+
+    def __str__(self) -> str:
+        return f"{self.min_quantity}+ → {self.unit_price} ({self.supplier_price.currency})"
+
+
+
+# ===== FILE: apps/procurement/models/supplier_price.py =====
+# Created according to the user's permanent Copilot Base Instructions.
+from __future__ import annotations
+
+from django.db import models
+from django.db.models.functions import Now
+
+
+class SupplierPrice(models.Model):
+    """
+    Supplier-specific purchasing price header.
+    Holds currency, validity, and flags.
+    Concrete price tiers are stored in SupplierQuantityPrice.
+    """
+
+    supplier_product = models.ForeignKey(
+        "procurement.SupplierProduct",
+        on_delete=models.CASCADE,
+        related_name="prices",
+    )
+
+    currency = models.ForeignKey(
+        "core.Currency",
+        on_delete=models.PROTECT,
+        related_name="supplier_prices",
+        help_text="Currency of this price list (ISO 4217).",
+    )
+
+    # Optional: in some APIs there is a flat price without tiers
+    unit_price = models.DecimalField(
+        max_digits=12,
+        decimal_places=4,
+        null=True,
+        blank=True,
+        help_text="Fallback flat unit price (without VAT). May be omitted if quantity prices exist.",
+    )
+    min_quantity = models.DecimalField(
+        max_digits=10,
+        decimal_places=3,
+        null=True,
+        blank=True,
+        help_text="Fallback minimum quantity for the flat price. Null if only tiers exist.",
+    )
+
+    # Validity
+    valid_from = models.DateField(null=True, blank=True)
+    valid_to = models.DateField(null=True, blank=True)
+
+    # Meta
+    is_active = models.BooleanField(default=True)
+    created_at = models.DateTimeField(db_default=Now(), editable=False)
+    updated_at = models.DateTimeField(db_default=Now(), editable=False)
+
+    class Meta:
+        verbose_name = "Supplier Price"
+        verbose_name_plural = "Supplier Prices"
+        constraints = [
+            models.UniqueConstraint(
+                fields=("supplier_product", "currency", "valid_from"),
+                name="uniq_supplier_price_header",
+            ),
+        ]
+
+    def __str__(self) -> str:
+        if self.unit_price is not None:
+            return f"{self.supplier_product} {self.unit_price} {self.currency.code}"
+        return f"{self.supplier_product} {self.currency.code} (tiered)"
+
+
+# ===== FILE: docs/ai_instructions/chatgpt_todo.txt =====
+„Scanne die Datei seitenweise und erstelle eine vollständige Liste aller class …(models.Model) Definitionen. Mach das in mehreren Schritten, bis du alle gefunden hast.“
+
+
+
+Modelle:
+„Scanne die Datei seitenweise und sammle alle class …(models.Model) Definitionen.“
+
+Tabellen:
+„Scanne die Datei seitenweise und sammle alle SQL CREATE TABLE Statements.“
+
+Funktionen:
+„Scanne die Datei seitenweise und sammle alle def … Funktionen.“
+
+Admin-Views:
+„Scanne die Datei seitenweise und sammle alle class …(admin.ModelAdmin) Definitionen.“
+
+Scanne die Datei seitenweise und erstelle eine vollständige Liste aller
+`class …(models.Model)` Definitionen.
+Arbeite solange automatisch weiter, bis du die gesamte Datei verarbeitet hast.
+Frage mich NICHT nach jedem Schritt, sondern fahre eigenständig fort,
+bis die Liste komplett ist.
+
+
+Scanne die Datei seitenweise und extrahiere nicht nur die Funktionssignaturen (`def …`),
+sondern auch den kompletten Funktionskörper bis zur nächsten Definition oder Klassen-Definition.
+Arbeite automatisch weiter, bis die gesamte Datei verarbeitet ist.
+Frage mich NICHT nach jedem Schritt.
+
+

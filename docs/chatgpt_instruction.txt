@@ -1,0 +1,13 @@
+wir haben hier das Projekt Areman. Es ist eine Anwendungung die eine Datenbank fuer einen Webshop und eine ERP System verbindet.
+die Anwdungung ist mit django entweckelt. die Datenbank ist postgresql.
+
+ich lade im Anschluss das Ergebnis vom
+von meinem Project Scanner hoch.
+- Creates PROJECT_OVERVIEW.md (detailed structure)
+- Creates PROJECT_SKELETON.py (skeleton code)
+- Creates PROJECT_INDEX.md (flat overview index)
+
+warte bis ich dir die dateien hochlade, ich melde mich dann wieder.
+Bestaetige mit "verstanden"
+
+

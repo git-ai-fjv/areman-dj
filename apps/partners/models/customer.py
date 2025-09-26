@@ -68,6 +68,9 @@ class Customer(models.Model):
     payment_terms = models.CharField(
         max_length=50, blank=True, default="", help_text="Payment terms shorthand (e.g., NET30)."
     )
+    comment = models.CharField(
+        max_length=200, blank=True, default="", help_text="comment"
+    )  # Keep CharField for cross-DB portability; can switch to EmailField later.
 
     # Timestamps to match project standard (DB defaults via NOW())
     created_at = models.DateTimeField(db_default=Now(), editable=False)
