@@ -15,7 +15,7 @@ Behavior:
     - If no ImportMapSet exists, aborts with an error.
     - Sets ImportRun.map_set if not already set.
     - Normalizes all ImportRawRecords with `normalized_data IS NULL` in batches.
-    - Logs processed counts.
+    - Logs processed counts (success vs. error).
 
 Depends on:
     - apps.imports.models.ImportRun
@@ -23,7 +23,7 @@ Depends on:
     - apps.imports.models.ImportMapSet / ImportMapDetail
     - apps.imports.services.mapping_engine (apply_mapping)
 
-    Example:
+Example:
     python manage.py normalize_records --supplier 70002
 """
 
@@ -68,7 +68,8 @@ class Command(BaseCommand):
             return
 
         total_runs = 0
-        total_records = 0
+        total_success = 0
+        total_errors = 0
 
         for run in runs:
             # find newest mapping for this supplier + source_type
@@ -96,32 +97,43 @@ class Command(BaseCommand):
 
             batch_size = 1000
             buffer = []
+            success_count = 0
+            error_count = 0
+
             for rec in raw_records.iterator():
                 try:
                     rec.normalized_data = apply_mapping(rec.payload, map_set)
-                    buffer.append(rec)
+                    rec.error_message_product_import = None
+                    success_count += 1
                 except Exception as e:
                     tb = traceback.format_exc()
                     logger.error(
                         f"Normalization failed for ImportRawRecord {rec.id}: {e}\n{tb}"
                     )
                     rec.error_message_product_import = f"Normalization error: {e}"
-                    buffer.append(rec)
+                    error_count += 1
+                buffer.append(rec)
 
                 if len(buffer) >= batch_size:
-                    ImportRawRecord.objects.bulk_update(buffer, ["normalized_data", "error_message_product_import"])
+                    ImportRawRecord.objects.bulk_update(
+                        buffer, ["normalized_data", "error_message_product_import"]
+                    )
                     buffer.clear()
 
             if buffer:
-                ImportRawRecord.objects.bulk_update(buffer, ["normalized_data", "error_message_product_import"])
+                ImportRawRecord.objects.bulk_update(
+                    buffer, ["normalized_data", "error_message_product_import"]
+                )
 
-            count = raw_records.count()
             total_runs += 1
-            total_records += count
+            total_success += success_count
+            total_errors += error_count
+
             self.stdout.write(self.style.SUCCESS(
-                f"Processed ImportRun {run.id}: {count} records normalized with map_set {map_set.id}."
+                f"Processed ImportRun {run.id}: {success_count} success, {error_count} errors "
+                f"with map_set {map_set.id}."
             ))
 
         self.stdout.write(self.style.SUCCESS(
-            f"Done. {total_runs} runs processed, {total_records} records normalized."
+            f"Done. {total_runs} runs processed, {total_success} records normalized, {total_errors} errors."
         ))
