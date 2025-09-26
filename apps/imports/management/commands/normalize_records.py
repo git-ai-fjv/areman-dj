@@ -15,16 +15,8 @@ Behavior:
     - If no ImportMapSet exists, aborts with an error.
     - Sets ImportRun.map_set if not already set.
     - Normalizes all ImportRawRecords with `normalized_data IS NULL` in batches.
+    - Loads defaults first, then applies supplier mapping (overwriting).
     - Logs processed counts (success vs. error).
-
-Depends on:
-    - apps.imports.models.ImportRun
-    - apps.imports.models.ImportRawRecord
-    - apps.imports.models.ImportMapSet / ImportMapDetail
-    - apps.imports.services.mapping_engine (apply_mapping)
-
-Example:
-    python manage.py normalize_records --supplier 70002
 """
 
 from __future__ import annotations
@@ -39,6 +31,7 @@ from apps.imports.models.import_raw_record import ImportRawRecord
 from apps.imports.models.import_map_set import ImportMapSet
 from apps.partners.models.supplier import Supplier
 from apps.imports.services.mapping_engine import apply_mapping
+from apps.imports.services.merge_defaults import load_defaults
 
 logger = logging.getLogger(__name__)
 
@@ -102,7 +95,14 @@ class Command(BaseCommand):
 
             for rec in raw_records.iterator():
                 try:
-                    rec.normalized_data = apply_mapping(rec.payload, map_set)
+                    # load defaults first (use map_set.organization!)
+                    normalized = load_defaults(map_set.organization)
+
+                    # apply supplier mapping and overwrite defaults
+                    mapped = apply_mapping(rec.payload, map_set)
+                    normalized.update(mapped)
+
+                    rec.normalized_data = normalized
                     rec.error_message_product_import = None
                     success_count += 1
                 except Exception as e:
