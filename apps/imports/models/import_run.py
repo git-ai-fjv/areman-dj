@@ -49,6 +49,8 @@ from __future__ import annotations
 from django.db import models
 from django.utils import timezone
 
+from apps.imports.models.import_map_set import ImportMapSet
+
 
 class ImportRun(models.Model):
     """
@@ -99,6 +101,14 @@ class ImportRun(models.Model):
         null=True,
         blank=True,
         help_text="Timestamp when raw records were processed into ERP tables."
+    )
+    map_set = models.ForeignKey(
+        ImportMapSet,
+        on_delete=models.PROTECT,
+        null=True,
+        blank=True,
+        related_name="import_runs",
+        help_text="The mapping set that was applied for this import run."
     )
 
     class Meta:

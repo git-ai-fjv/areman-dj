@@ -46,8 +46,11 @@ python manage.py seed_import_transform_types
 python manage.py seed_import_data_types
 echo "****************** create default for import ********************************"
 python manage.py seed_import_defaults --org 1 --valid-from 2025-01-01
+echo "****************** seed fuer komatsu (Kuhn) ********************************"
+python manage.py seed_import_map_komatsu --supplier 70002 --org 1
 
 echo "****************** Create superuser ********************************"
+
 
 
 DJANGO_SUPERUSER_USERNAME=fjv \

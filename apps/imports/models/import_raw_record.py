@@ -76,6 +76,12 @@ class ImportRawRecord(models.Model):
         help_text="Full raw payload from the external source (JSON or converted dict)."
     )
 
+    normalized_data = models.JSONField(
+        help_text="Normalized data extracted from the raw payload for easier processing.",
+        null=True,
+        blank=True,
+    )
+
     supplier_product_reference = models.CharField(
         max_length=255,
         null=True,

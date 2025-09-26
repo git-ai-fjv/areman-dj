@@ -26,16 +26,18 @@ Depends on:
     - Django transaction management and logging
 
 Example:
-    # Auto-detect newest file and import
-    python manage.py import_komatsu --supplier SUPP01
+    # Auto-detect newest file and import (default supplier 70002)
+    python manage.py import_komatsu
 
     # Dry run (preview up to 20 rows, no DB changes)
-    python manage.py import_komatsu --supplier SUPP01 --dry-run
+    python manage.py import_komatsu --dry-run
 
     # Import specific file
+    python manage.py import_komatsu --file apps/imports/data/70002/2025/08/komatsu_06-25.xlsx
+
+    # Override supplier explicitly
     python manage.py import_komatsu --supplier SUPP01 --file apps/imports/data/SUPP01/2025/08/komatsu_06-25.xlsx
 """
-
 
 
 from __future__ import annotations
@@ -65,15 +67,17 @@ class Command(BaseCommand):
     help = """Import the newest Komatsu Excel file for a supplier into ImportRawRecord.
 
 Usage:
-  python manage.py import_komatsu --supplier SUPP01 [--file path/to/file.xlsx] [--dry-run]
+  python manage.py import_komatsu [--supplier CODE] [--file path/to/file.xlsx] [--dry-run]
 
-By default, the command looks in:
+By default, --supplier defaults to 70002 and the command looks in:
   apps/imports/data/<SUPPLIER>/<YYYY>/<MM>/ for the newest file.
 """
 
     def add_arguments(self, parser) -> None:
         parser.add_argument(
-            "--supplier", required=True, help="Supplier code (e.g., SUPP01)"
+            "--supplier",
+            default="70002",
+            help="Supplier code (default: 70002)",
         )
         parser.add_argument(
             "--file",
@@ -234,15 +238,3 @@ By default, the command looks in:
             tb = traceback.format_exc()
             logger.error(f"Komatsu import failed: {e}")
             raise CommandError(f"Error during import: {e}\n{tb}")
-
-
-#
-# Auto-neueste Datei finden:
-#   python manage.py import_komatsu --supplier SUPP01
-#
-# Trockenlauf (nur anzeigen, max 20 Zeilen, Pflichtfelder Part Number + Description):
-#   python manage.py import_komatsu --supplier SUPP01 --dry-run
-#
-# Spezifische Datei importieren:
-#   python manage.py import_komatsu --supplier SUPP01 --file apps/imports/data/SUPP01/2025/08/komatsu_06-25.xlsx
-

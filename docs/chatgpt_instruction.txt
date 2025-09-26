@@ -7,6 +7,10 @@ von meinem Project Scanner hoch.
 - Creates PROJECT_SKELETON.py (skeleton code)
 - Creates PROJECT_INDEX.md (flat overview index)
 
+all_models_combined.txt
+project_docsstrings.md
+
+
 warte bis ich dir die dateien hochlade, ich melde mich dann wieder.
 Bestaetige mit "verstanden"
 

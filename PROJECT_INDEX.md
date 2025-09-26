@@ -118,6 +118,8 @@
 - apps/partners/apps.py → 1 classes, 0 functions/methods
 - apps/partners/management/commands/seed_suppliers.py → 1 classes, 4 functions/methods
 - apps/partners/migrations/0001_initial.py → 1 classes, 0 functions/methods
+- apps/partners/migrations/0002_customer_comment.py → 1 classes, 0 functions/methods
+- apps/partners/migrations/0003_supplier_comment.py → 1 classes, 0 functions/methods
 - apps/partners/migrations/__init__.py → 0 classes, 0 functions/methods
 - apps/partners/models/__init__.py → 0 classes, 0 functions/methods
 - apps/partners/models/customer.py → 2 classes, 1 functions/methods

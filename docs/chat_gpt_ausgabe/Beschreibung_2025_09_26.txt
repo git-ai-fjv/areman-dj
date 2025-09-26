@@ -1,0 +1,150 @@
+# 📖 Zusammenfassung des Projekts
+
+## 🏛 Kernsystem (core)
+- **Organization**
+  Stammdaten für Mandanten/Organisationen. Eindeutig identifiziert durch `org_code`.
+  Basis für fast alle anderen Tabellen/Modelle im System.
+
+- **Currency**
+  ISO-4217 Währungen mit Anzeige-Infos (Name, Symbol, Nachkommastellen) und Aktiv-Flag.
+  Wird u. a. in Preislisten, Bestellungen und Zahlungen verwendet.
+
+---
+
+## 📦 Katalog (catalog)
+- **Origin**
+  Stammdaten für Herkunftskennzeichen (einzelner Buchstabe).
+  Wird für Varianten zur Klassifikation genutzt.
+
+- **Packing**
+  Verpackungseinheiten (Packungsgröße, Multiplikator, Beschreibungen).
+  Eindeutig pro Organisation + Packungscode.
+
+- **Product**
+  Masterdaten für Produkte (Name, Hersteller, Part-Number, SEO/Marketing-Infos, Flags wie *neu* oder *Auslauf*).
+  Enthält Normalisierung für Herstellerteilenummern.
+
+- **ProductGroup**
+  Gruppen zur logischen Organisation von Produkten.
+  Eindeutig pro Organisation + Gruppencode.
+
+- **ProductMedia**
+  Medienverwaltung (Bilder, Videos, Dokumente) für Produkte oder Varianten.
+  Mit Rolle (z. B. „gallery“), Sortierung, Alt-Text, URL, Meta-Daten.
+
+- **ProductVariant**
+  Konkrete SKU/verkaufbare Einheit. Enthält Barcode, Maße, Gewicht, Zollcode, eClass-Code.
+  Bindeglied zu Packing, Origin, State.
+  Beinhaltet Bestands- und Verfügbarkeitsattribute, Mindest- und Maximalabnahmemengen, Flags (Topseller, Versandkostenfrei).
+
+- **State**
+  Stammdaten für Zustandsklassifikation (z. B. neu, gebraucht, refurbished).
+  Einzelbuchstaben-Code.
+
+---
+
+## 🔄 Import-Framework (imports)
+- **ImportDataType**
+  Referenztabelle für Datentypen (string, int, decimal, bool, date, …).
+  Wird in Mapping- und Transformationsregeln genutzt.
+
+- **ImportTransformType**
+  Registry für Transformationen (uppercase, lowercase, strip, int, decimal, bool).
+
+- **ImportSourceType**
+  Referenztabelle für Quelltypen (Datei, API, manuell, …).
+
+- **ImportRun**
+  Header einer einzelnen Importausführung. Enthält Metadaten, Status, Start/Endzeit, Quelle.
+
+- **ImportRawRecord**
+  Speicherung der Rohdaten (JSON, XML, CSV-Zeilen, …).
+  Enthält Flags, ob Datensatz erfolgreich in ERP-Tabellen importiert wurde oder Fehler aufgetreten sind.
+
+- **ImportErrorLog**
+  Fehlerprotokoll je ImportRun und Zeile, inkl. Fehlermeldung und Payload.
+
+- **ImportMapSet**
+  Kopf einer Mapping-Konfiguration (Organisation, Lieferant, Quelltyp, Gültigkeit).
+
+- **ImportMapDetail**
+  Zeilen einer Mapping-Konfiguration: von Source-Path → Target-Path, inkl. Datentyp und Transformationsregel.
+
+- **ImportGlobalDefaultSet**
+  Kopf für globale Defaultwerte (gültig für alle Lieferanten).
+
+- **ImportGlobalDefaultLine**
+  Zeilen der Defaults: Ziel-Pfad + Defaultwert + Typisierung + Transform.
+
+---
+
+## 🤝 Partnerverwaltung (partners)
+- **Customer**
+  Kundenstammdaten (Codes, Kontaktinfos, Adresse, Steuernummer, Zahlungsbedingungen).
+
+- **Supplier**
+  Lieferantenstammdaten (Codes, Kontakte, Adresse, Zahlungsbedingungen, Präferenz, Lead-Time).
+
+---
+
+## 💰 Preise (pricing)
+- **CurrencyRate**
+  Wechselkurse zwischen zwei Währungen, mit Datum.
+  Enthält Constraint für positive Werte.
+
+- **PriceGroup**
+  Preisgruppen pro Organisation, einfache Klassifizierung.
+
+- **PriceList**
+  Preislisten pro Organisation, mit Währung, Typ (S = Sales, P = Purchase).
+  Enthält Aktiv-Flag und Gültigkeitskontrolle.
+
+- **SalesChannelVariantPrice**
+  Preise für Produktvarianten in bestimmten Kanälen/Preislisten, inkl. Zeiträume.
+
+- **TaxClass**
+  Steuerklassen (Name, Steuersatz 0–1, z. B. 0.19 für 19 %).
+
+---
+
+## 🛒 Einkauf (procurement)
+- **SupplierProduct**
+  Verknüpft Varianten mit Lieferanten.
+  Beinhaltet Lieferanten-SKU, Beschreibung, Packungsgröße, MOQ, Leadtime.
+
+- **SupplierPrice**
+  Kopf für Einkaufspreise, mit Währung, Gültigkeit und ggf. Flat-Unit-Preis.
+
+- **SupplierQuantityPrice**
+  Preisstaffeln je SupplierPrice (ab Menge X → Preis Y).
+
+- **PurchaseOrder**
+  Einkaufsbestellungs-Header. Enthält Lieferant, Währung, Status, Notizen, erwartetes Lieferdatum.
+
+- **PurchaseOrderLine**
+  Zeilen der Einkaufsbestellung. Enthält SupplierProduct, Menge, Preis, Notizen.
+
+---
+
+## 🛍 Vertrieb (sales)
+- **SalesOrder**
+  Verkaufsbestellung (Header), mit Kunde, Währung, Status, Notizen, erwartetes Datum.
+
+- **SalesOrderLine**
+  Zeilen der Verkaufsbestellung, mit Variant, Menge, Preis.
+
+---
+
+# 🧭 Gesamtbild
+Das Projekt bildet ein **ERP-ähnliches System** mit stark modularer Struktur:
+- **Core** liefert die Basis (Organisationen, Währungen).
+- **Catalog** beschreibt Produkte, Varianten, Medienelemente und Klassifikationen.
+- **Imports** sorgt für flexible Datenaufnahme aus Lieferantenquellen.
+- **Partners** verwaltet Kunden und Lieferanten.
+- **Pricing** deckt Preislisten, Preisregeln, Steuern und Währungen ab.
+- **Procurement** organisiert Einkauf, Lieferantenartikel, Bestellungen.
+- **Sales** bildet Verkaufsaufträge ab.
+
+Das System ist so aufgebaut, dass **jede App eigenständig dokumentiert** ist, mit klaren Verantwortlichkeiten und sauber definierten Beziehungen (FKs).
+
+

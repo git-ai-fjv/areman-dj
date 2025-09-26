@@ -37,8 +37,32 @@ default_reply = "understand all: Awaiting your instructions."
 
 
 # ===== FILE: apps/core/models/organization.py =====
-#!/usr/bin/env python3
-# Created according to the user's permanent Copilot Base Instructions.
+# apps/core/models/organization.py
+"""
+Purpose:
+    Master data table for organizations (tenants/mandants).
+    Provides a scoped context for all other business entities.
+
+Context:
+    Every business object (customer, supplier, product, pricing, etc.)
+    is linked to an Organization via org_code.
+
+Fields:
+    - org_code (SmallInteger, PK): Unique code identifying the organization.
+    - org_description (CharField): Optional description/name.
+
+Constraints:
+    - org_code is the primary key.
+    - No additional constraints defined.
+
+Example:
+    >>> from apps.core.models import Organization
+    >>> org = Organization.objects.create(org_code=1, org_description="Main Company")
+    >>> str(org)
+    'Main Company'
+"""
+
+
 from __future__ import annotations
 from django.db import models
 
@@ -67,7 +91,34 @@ class Organization(models.Model):
 
 # ===== FILE: apps/core/models/currency.py =====
 # apps/core/models/currency.py
-# Created according to the user's Copilot Base Instructions.
+"""
+Purpose:
+    Reference table for ISO-4217 currencies.
+    Stores currency code, name, symbol, decimal precision, and active status.
+
+Context:
+    Used throughout the system to enforce consistent currency handling
+    (pricing, procurement, sales, finance).
+
+Fields:
+    - code (CharField, PK): ISO 4217 currency code (e.g., "USD", "EUR").
+    - name (CharField): Full currency name (e.g., "US Dollar").
+    - symbol (CharField): Display symbol (e.g., "$", "€").
+    - decimal_places (SmallInteger): Allowed decimals (0–6; EUR=2).
+    - is_active (Bool): Whether this currency is active.
+    - created_at / updated_at: System timestamps, DB-managed.
+
+Constraints:
+    - decimal_places must be between 0 and 6.
+
+Example:
+    >>> from apps.core.models import Currency
+    >>> eur = Currency.objects.create(code="EUR", name="Euro", symbol="€", decimal_places=2)
+    >>> str(eur)
+    'EUR — Euro'
+"""
+
+
 
 
 
@@ -106,7 +157,41 @@ class Currency(models.Model):
 
 # ===== FILE: apps/imports/models/import_data_type.py =====
 # apps/imports/models/import_data_type.py
-# Created according to the user's permanent Copilot Base Instructions.
+"""
+Purpose:
+    Defines the available datatypes for mapping and transformation during imports.
+    Ensures consistent typing when parsing external data sources into the system.
+
+Context:
+    Part of the `imports` app. Used by the import framework to validate and
+    transform incoming values into the correct Python representation.
+
+Fields:
+    - code (CharField, 30, unique): Short code identifier (e.g., "str", "int", "decimal").
+    - description (CharField, 100): Human-readable label for the type.
+    - python_type (CharField, 50): Python type or handler string (e.g., "decimal.Decimal").
+
+Relations:
+    - No direct foreign keys. Acts as a reference/master table.
+
+Used by:
+    - Import pipeline and mapping services to resolve field datatypes.
+    - Validation logic for ensuring correct type conversion.
+
+Depends on:
+    - Django ORM
+
+Example:
+    >>> from apps.imports.models import ImportDataType
+    >>> t = ImportDataType.objects.create(
+    ...     code="bool",
+    ...     description="Boolean",
+    ...     python_type="bool"
+    ... )
+    >>> print(t)
+    bool (Boolean)
+"""
+
 
 from __future__ import annotations
 from django.db import models
@@ -145,6 +230,50 @@ class ImportDataType(models.Model):
 
 # ===== FILE: apps/imports/models/import_global_default_line.py =====
 # apps/imports/models/import_global_default_line.py
+"""
+Purpose:
+    Represents a single line entry within a global default set for imports.
+    Each line maps a target field path to a default value, optionally with
+    a transform and enforced datatype.
+
+Context:
+    Belongs to the imports domain. Used when building base dictionaries of
+    defaults (e.g., for products, variants, suppliers) before mapping raw
+    import data. Provides consistent fallback values across an organization.
+
+Fields:
+    - set (FK → ImportGlobalDefaultSet): The owning default set.
+    - target_path (CharField, 255): Path of the field (e.g., "product.name").
+    - default_value (JSONField): The fallback value for this path.
+    - transform (FK → ImportTransformType): Optional transform to apply.
+    - is_required (BooleanField): Whether the field must be present.
+    - target_datatype (FK → ImportDataType): Defines the expected datatype.
+
+Relations:
+    - ImportGlobalDefaultSet → multiple ImportGlobalDefaultLine
+    - ImportTransformType → multiple ImportGlobalDefaultLine
+    - ImportDataType → multiple ImportGlobalDefaultLine
+
+Used by:
+    - apps/imports/services/defaults.py (build_base_dict, applying defaults)
+
+Depends on:
+    - apps.imports.models.import_global_default_set.ImportGlobalDefaultSet
+    - apps.imports.models.import_data_type.ImportDataType
+    - apps.imports.models.import_transform_type.ImportTransformType
+
+Example:
+    >>> from apps.imports.models import ImportGlobalDefaultLine
+    >>> line = ImportGlobalDefaultLine.objects.create(
+    ...     set=default_set,
+    ...     target_path="product.state_code",
+    ...     default_value="active",
+    ...     target_datatype=dt_str
+    ... )
+    >>> print(line)
+    product.state_code = active
+"""
+
 
 from __future__ import annotations
 from django.db import models
@@ -203,7 +332,45 @@ class ImportGlobalDefaultLine(models.Model):
 
 # ===== FILE: apps/imports/models/import_global_default_set.py =====
 # apps/imports/models/import_global_default_set.py
-# Created according to the user's permanent Copilot Base Instructions.
+"""
+Purpose:
+    Represents the head record for global default configurations that apply
+    to all suppliers within an organization. Each set has a description and
+    validity date that determines which defaults are active at a given time.
+
+Context:
+    Part of the imports domain. Used as a container for multiple
+    ImportGlobalDefaultLine entries that define specific default values.
+    Provides versioning of defaults by validity period.
+
+Fields:
+    - organization (FK → core.Organization): Owner of the default set.
+    - description (CharField, 255): Human-readable description.
+    - valid_from (DateField): Start date from which the defaults are active.
+    - created_at (DateTimeField): Timestamp when the set was created.
+
+Relations:
+    - Organization → multiple ImportGlobalDefaultSet
+    - ImportGlobalDefaultSet → multiple ImportGlobalDefaultLine
+
+Used by:
+    - apps/imports/services/defaults.py (get_active_default_set, build_base_dict)
+
+Depends on:
+    - apps.core.models.Organization
+    - apps.imports.models.import_global_default_line.ImportGlobalDefaultLine
+
+Example:
+    >>> from apps.imports.models import ImportGlobalDefaultSet
+    >>> default_set = ImportGlobalDefaultSet.objects.create(
+    ...     organization=org,
+    ...     description="Default product values",
+    ...     valid_from="2025-01-01",
+    ... )
+    >>> print(default_set)
+    Default product values (from 2025-01-01)
+"""
+
 
 from __future__ import annotations
 from django.db import models
@@ -240,7 +407,45 @@ class ImportGlobalDefaultSet(models.Model):
 
 # ===== FILE: apps/imports/models/import_error_log.py =====
 # apps/imports/models/import_error_log.py
-# Created according to the user's permanent Copilot Base Instructions.
+"""
+Purpose:
+    Logs errors that occur during the import process while transforming
+    raw records into structured ERP tables.
+
+Context:
+    Part of the `imports` app. Provides visibility into failures when
+    processing ImportRawRecord entries inside an ImportRun.
+
+Fields:
+    - import_run (FK → imports.ImportRun): The run during which the error occurred.
+    - line_number (IntegerField, nullable): Source line number in the raw file.
+    - error_message (TextField): Description of the error encountered.
+    - payload (JSONField, nullable): Optional snapshot of the input data.
+    - created_at (DateTimeField): Timestamp when the error was logged.
+
+Relations:
+    - ImportRun → multiple ImportErrorLogs
+
+Used by:
+    - Import framework to persist errors for later inspection.
+    - Admin/UI for debugging failed imports.
+
+Depends on:
+    - apps.imports.models.ImportRun
+    - Django ORM
+
+Example:
+    >>> from apps.imports.models import ImportErrorLog, ImportRun
+    >>> run = ImportRun.objects.first()
+    >>> ImportErrorLog.objects.create(
+    ...     import_run=run,
+    ...     line_number=42,
+    ...     error_message="Invalid price format",
+    ...     payload={"sku": "X123", "price": "abc"}
+    ... )
+    <ImportErrorLog: Error in run 1 line 42: Invalid price format>
+"""
+
 
 from __future__ import annotations
 
@@ -292,7 +497,57 @@ class ImportErrorLog(models.Model):
 
 # ===== FILE: apps/imports/models/import_raw_record.py =====
 # apps/imports/models/import_raw_record.py
-# Created according to the user's permanent Copilot Base Instructions.
+"""
+Purpose:
+    Stores raw unmodified data from supplier or customer imports. Acts as the
+    first persistence layer for payloads before transformation or validation.
+
+Context:
+    Belongs to the imports domain. Each ImportRawRecord links to an ImportRun
+    and captures a single line/item from the input (JSON, XML, CSV, etc.).
+    Used for auditing, debugging, error handling, and retries.
+
+Fields:
+    - import_run (FK → ImportRun): The import run this record belongs to.
+    - line_number (IntegerField): Sequential number within the run (starting at 1).
+    - payload (JSONField): Full raw payload from the external source.
+    - supplier_product_reference (CharField, 255, optional): Supplier’s identifier
+      (SKU, part number) for fast lookup.
+    - product_is_imported / price_is_imported (BooleanField): Flags whether
+      this record was successfully imported into ERP/price tables.
+    - product_imported_at / price_imported_at (DateTimeField, optional): Timestamps
+      for successful imports.
+    - is_product_import_error / is_price_import_error (BooleanField): Flags whether
+      import attempts failed.
+    - error_message_product_import / error_message_price_import (TextField, optional):
+      Detailed error messages for failed imports.
+    - retry_count_product_import / retry_count_price_import (PositiveIntegerField):
+      Number of retries attempted for this record.
+
+Relations:
+    - ImportRun → multiple ImportRawRecord (1:n).
+
+Used by:
+    - Import pipelines for auditing, retry handling, and debugging.
+    - Error logging/reporting systems.
+
+Depends on:
+    - apps.imports.models.ImportRun
+
+Example:
+    >>> from apps.imports.models import ImportRawRecord, ImportRun
+    >>> run = ImportRun.objects.first()
+    >>> rec = ImportRawRecord.objects.create(
+    ...     import_run=run,
+    ...     line_number=1,
+    ...     payload={"Part Number": "X123", "Price": "12.50"},
+    ...     supplier_product_reference="X123",
+    ... )
+    >>> print(rec)
+    Run 1, line 1, ref=X123
+"""
+
+
 from __future__ import annotations
 from django.db import models
 from django.utils import timezone
@@ -412,7 +667,53 @@ class ImportRawRecord(models.Model):
 
 # ===== FILE: apps/imports/models/import_map_set.py =====
 # apps/imports/models/import_map_set.py
-# Created according to the user's permanent Copilot Base Instructions.
+"""
+Purpose:
+    Represents a configuration set that defines how raw import data from a
+    supplier and source type should be mapped into the ERP structure.
+
+Context:
+    Part of the imports domain. Each ImportMapSet groups multiple
+    ImportMapDetail entries that specify field-level mapping rules.
+    Defines which mapping applies for a given supplier and source type,
+    with a start date of validity.
+
+Fields:
+    - organization (FK → core.Organization): The organization this mapping belongs to.
+    - supplier (FK → partners.Supplier): The supplier providing the import data.
+    - source_type (FK → imports.ImportSourceType): The type of import source (file, API, etc.).
+    - description (CharField, 255): Human-readable description of the mapping set.
+    - valid_from (DateField): Date from which this mapping is effective.
+    - created_at (DateTimeField): Timestamp when the mapping set was created.
+
+Relations:
+    - Organization → multiple ImportMapSet
+    - Supplier → multiple ImportMapSet
+    - ImportSourceType → multiple ImportMapSet
+    - ImportMapSet → multiple ImportMapDetail (child rules)
+
+Used by:
+    - Import processing engine to determine which mapping rules to apply
+      for supplier imports.
+    - apps.imports.models.import_map_detail.ImportMapDetail
+
+Depends on:
+    - apps.core.models.Organization
+    - apps.partners.models.Supplier
+    - apps.imports.models.import_source_type.ImportSourceType
+
+Example:
+    >>> from apps.imports.models import ImportMapSet
+    >>> ms = ImportMapSet.objects.create(
+    ...     organization=org,
+    ...     supplier=supplier,
+    ...     source_type=src_type,
+    ...     description="Default CSV mapping",
+    ...     valid_from="2025-01-01",
+    ... )
+    >>> print(ms)
+    SUPP01 / file (from 2025-01-01)
+"""
 
 from __future__ import annotations
 from django.db import models
@@ -468,7 +769,54 @@ class ImportMapSet(models.Model):
 
 # ===== FILE: apps/imports/models/import_map_detail.py =====
 # apps/imports/models/import_map_detail.py
-# Created according to the user's permanent Copilot Base Instructions.
+"""
+Purpose:
+    Represents a single mapping rule that defines how a field from the source
+    import payload is transformed and assigned to a standardized target path.
+
+Context:
+    Part of the imports domain. Each ImportMapDetail belongs to an
+    ImportMapSet, forming a collection of rules that describe how to
+    process supplier or external data into the ERP structure.
+
+Fields:
+    - map_set (FK → ImportMapSet): Parent set grouping related map details.
+    - source_path (CharField, 255): Path of the source field in the raw payload.
+    - target_path (CharField, 255): Path in the standardized dict where the
+      value will be stored.
+    - target_datatype (FK → ImportDataType): Datatype the value should be
+      converted to.
+    - transform (CharField, 50, nullable): Optional transformation to apply
+      (e.g., uppercase, decimal).
+    - is_required (BooleanField): Marks if the target field is mandatory.
+
+Relations:
+    - ImportMapSet → multiple ImportMapDetail
+    - ImportDataType → multiple ImportMapDetail
+
+Used by:
+    - Import processing pipeline to transform raw supplier data.
+    - apps.imports.services.transform_utils.apply_transform
+
+Depends on:
+    - apps.imports.models.import_map_set.ImportMapSet
+    - apps.imports.models.import_data_type.ImportDataType
+
+Example:
+    >>> from apps.imports.models import ImportMapDetail, ImportMapSet, ImportDataType
+    >>> dt = ImportDataType.objects.get(code="decimal")
+    >>> ms = ImportMapSet.objects.first()
+    >>> detail = ImportMapDetail.objects.create(
+    ...     map_set=ms,
+    ...     source_path="Listenpreis",
+    ...     target_path="price.price",
+    ...     target_datatype=dt,
+    ...     transform="decimal",
+    ...     is_required=True,
+    ... )
+    >>> print(detail)
+    Listenpreis → price.price (decimal)
+"""
 
 from __future__ import annotations
 from django.db import models
@@ -534,7 +882,37 @@ class ImportMapDetail(models.Model):
 
 # ===== FILE: apps/imports/models/import_transform_type.py =====
 # apps/imports/models/import_transform_type.py
-# Created according to the user's permanent Copilot Base Instructions.
+"""
+Purpose:
+    Registry of supported transformation functions used in import mapping.
+    Provides a unique code and description for each transform.
+
+Context:
+    Part of the imports domain. Transform types define how raw values
+    from import payloads should be processed before saving.
+
+Fields:
+    - code (CharField, 50, unique): Identifier of the transform (e.g., "uppercase", "int").
+    - description (CharField, 255): Human-readable description of the transformation.
+
+Relations:
+    - ImportTransformType → multiple ImportGlobalDefaultLines (1:n).
+    - ImportTransformType → used in mapping definitions (FKs).
+
+Used by:
+    - ImportGlobalDefaultLine (transform FK).
+    - Mapping and ETL logic to dynamically apply transforms.
+
+Depends on:
+    - Django ORM.
+
+Example:
+    >>> from apps.imports.models import ImportTransformType
+    >>> t = ImportTransformType.objects.create(code="uppercase", description="Convert text to upper case")
+    >>> print(t)
+    uppercase — Convert text to upper case
+"""
+
 
 from __future__ import annotations
 from django.db import models
@@ -568,7 +946,38 @@ class ImportTransformType(models.Model):
 
 # ===== FILE: apps/imports/models/import_source_type.py =====
 # apps/imports/models/import_source_type.py
-# Created according to the user's permanent Copilot Base Instructions.
+"""
+Purpose:
+    Defines available import source types (e.g., file, API, manual).
+    Serves as a reference table for categorizing import runs and mappings.
+
+Context:
+    Part of the imports domain. Each ImportRun references an ImportSourceType
+    to indicate where the data originated from. Used in mapping and logging.
+
+Fields:
+    - code (CharField, 20, unique): Short identifier (e.g., "file", "api").
+    - description (CharField, 100): Human-readable description.
+
+Relations:
+    - ImportSourceType → multiple ImportRuns (1:n).
+    - ImportSourceType → multiple ImportMapSets (1:n).
+
+Used by:
+    - ImportRun (source_type FK).
+    - ImportMapSet (source_type FK).
+
+Depends on:
+    - Django ORM (constraints, unique checks).
+
+Example:
+    >>> from apps.imports.models import ImportSourceType
+    >>> t = ImportSourceType.objects.create(code="file", description="File Import")
+    >>> print(t)
+    file — File Import
+"""
+
+
 from __future__ import annotations
 from django.db import models
 
@@ -600,7 +1009,52 @@ class ImportSourceType(models.Model):
 
 # ===== FILE: apps/imports/models/import_run.py =====
 # apps/imports/models/import_run.py
-# Created according to the user's permanent Copilot Base Instructions.
+"""
+Purpose:
+    Represents a single supplier import execution (header record).
+    Tracks metadata about the run, including timing, status, source, and counts.
+
+Context:
+    Belongs to the imports domain. Each ImportRun serves as the parent entity
+    for ImportRawRecord entries and error logs. Used to monitor the lifecycle
+    of an import job.
+
+Fields:
+    - supplier (FK → Supplier): Supplier this run belongs to.
+    - source_type (FK → ImportSourceType): Type of source (e.g., file, API, CSV).
+    - source_file (CharField, 500, optional): Path or identifier of the imported file.
+    - started_at (DateTimeField): Timestamp when the import started.
+    - finished_at (DateTimeField, optional): Timestamp when the import finished.
+    - status (CharField, 20): Run status ("running", "success", "failed").
+    - total_records (IntegerField, optional): Number of raw records fetched.
+    - is_processed (BooleanField): Whether the run has been processed into ERP tables.
+    - processed_at (DateTimeField, optional): Timestamp when records were processed.
+
+Relations:
+    - Supplier → multiple ImportRuns (1:n).
+    - ImportRun → multiple ImportRawRecord (1:n).
+    - ImportRun → multiple ImportErrorLog (1:n).
+
+Used by:
+    - Import pipelines for execution tracking and reporting.
+    - Error logging and auditing mechanisms.
+
+Depends on:
+    - apps.partners.models.Supplier
+    - apps.imports.models.ImportSourceType
+
+Example:
+    >>> from apps.imports.models import ImportRun
+    >>> run = ImportRun.objects.create(
+    ...     supplier=supplier,
+    ...     source_type=source_type,
+    ...     source_file="/imports/supplier_2025-01.csv"
+    ... )
+    >>> print(run)
+    ImportRun 1 — SUPPLIERX at 2025-01-10 12:00
+"""
+
+
 from __future__ import annotations
 from django.db import models
 from django.utils import timezone
@@ -667,27 +1121,46 @@ class ImportRun(models.Model):
 
 
 # ===== FILE: apps/pricing/models/currency_rate.py =====
-# Created according to the user's Copilot Base Instructions.
+# apps/core/models/currency_rate.py
 """
--- =========================
--- TABLE: currency_rate
--- =========================
-CREATE TABLE public.currency_rate (
-  id          BIGSERIAL     PRIMARY KEY NOT NULL,
-  base_code   CHAR(3)       NOT NULL,   -- FK -> currency(code)
-  quote_code  CHAR(3)       NOT NULL,   -- FK -> currency(code)
-  rate        NUMERIC(16,8) NOT NULL,   -- z.B. 1.12345678
-  rate_date   DATE          NOT NULL,   -- Kurs-Datum
-  created_at  TIMESTAMPTZ   NOT NULL DEFAULT statement_timestamp(),
-  updated_at  TIMESTAMPTZ   NOT NULL DEFAULT statement_timestamp(),
-  FOREIGN KEY (base_code)  REFERENCES public.currency (code) ON DELETE NO ACTION,
-  FOREIGN KEY (quote_code) REFERENCES public.currency (code) ON DELETE NO ACTION,
-  CONSTRAINT ck_currency_rate_positive CHECK (rate > 0),
-  CONSTRAINT uniq_currency_rate UNIQUE (base_code, quote_code, rate_date)
-);
-CREATE INDEX idx_currency_rate_date       ON public.currency_rate (rate_date);
-CREATE INDEX idx_currency_rate_base_quote ON public.currency_rate (base_code, quote_code);
+Purpose:
+    Represents daily exchange rates between two currencies.
+    Stores conversion factors (base → quote) with full precision
+    and enforces uniqueness per date.
+
+Context:
+    Part of the core app. Used by pricing, procurement, and reporting
+    to convert between currencies for transactions and analytics.
+
+Fields:
+    - base (FK → core.Currency): Base currency of the rate.
+    - quote (FK → core.Currency): Quote currency of the rate.
+    - rate (DecimalField, 16,8): Conversion factor (e.g., 1.12345678).
+    - rate_date (DateField): Date the rate applies to.
+    - created_at / updated_at (DateTimeField): Audit timestamps.
+
+Relations:
+    - Currency (base) → multiple CurrencyRates
+    - Currency (quote) → multiple CurrencyRates
+
+Used by:
+    - Pricing and ERP calculations
+    - Reports requiring currency normalization
+    - Procurement processes involving multi-currency suppliers
+
+Depends on:
+    - apps.core.models.Currency
+    - Django ORM (constraints, validators)
+
+Example:
+    >>> from apps.core.models import CurrencyRate, Currency
+    >>> usd = Currency.objects.get(code="USD")
+    >>> eur = Currency.objects.get(code="EUR")
+    >>> cr = CurrencyRate.objects.create(base=usd, quote=eur, rate="0.92345678", rate_date="2025-09-26")
+    >>> print(cr)
+    USD/EUR @ 0.92345678 (2025-09-26)
 """
+
 from __future__ import annotations
 
 from django.db import models
@@ -738,8 +1211,47 @@ class CurrencyRate(models.Model):
 
 
 # ===== FILE: apps/pricing/models/price_group.py =====
-#!/usr/bin/env python3
-# Created according to the user's permanent Copilot Base Instructions.
+# apps/pricing/models/price_group.py
+"""
+Purpose:
+    Represents a logical grouping of prices within an organization.
+    Allows categorization of product or customer prices into groups
+    such as retail, wholesale, or special contract pricing.
+
+Context:
+    Belongs to the pricing domain. PriceGroups are used to define
+    customer-specific or organization-specific pricing structures.
+
+Fields:
+    - organization (FK → core.Organization): The owning organization.
+    - price_group_code (CharField, max 20): Unique code per organization.
+    - price_group_description (CharField, max 200): Optional descriptive name.
+
+Relations:
+    - Organization → multiple PriceGroups
+    - Referenced by PriceList or SalesChannelVariantPrice
+      to determine applicable prices.
+
+Used by:
+    - Pricing logic for ERP/shops
+    - Import routines that map supplier/customer pricing
+    - Reporting modules for analyzing price segmentation
+
+Depends on:
+    - apps.core.models.Organization
+
+Example:
+    >>> from apps.pricing.models import PriceGroup
+    >>> pg = PriceGroup.objects.create(
+    ...     organization=org,
+    ...     price_group_code="WHOLESALE",
+    ...     price_group_description="Wholesale customer pricing"
+    ... )
+    >>> print(pg)
+    WHOLESALE — Wholesale customer pricing
+"""
+
+
 from __future__ import annotations
 from django.db import models
 
@@ -786,22 +1298,40 @@ class PriceGroup(models.Model):
 
 
 # ===== FILE: apps/pricing/models/tax_class.py =====
-# Created according to the user's Copilot Base Instructions.
+# apps/pricing/models/tax_class.py
 """
--- =========================
--- TABLE: tax_class
--- =========================
-CREATE TABLE public.tax_class (
-  id           INTEGER       PRIMARY KEY NOT NULL,
-  name         VARCHAR(100)  NOT NULL,
-  rate         NUMERIC(5,4)  NOT NULL,   -- z.B. 0.1900 (=19%)
-  created_at   TIMESTAMPTZ   NOT NULL DEFAULT statement_timestamp(),
-  updated_at   TIMESTAMPTZ   NOT NULL DEFAULT statement_timestamp(),
-  CONSTRAINT uniq_tax_class_name UNIQUE (name),
-  CONSTRAINT ck_tax_class_rate CHECK (rate >= 0 AND rate <= 1)
-);
-CREATE INDEX idx_tax_class_rate ON public.tax_class (rate);
+Purpose:
+    Defines tax classes for products and services, including name and rate.
+    Used to determine applicable tax percentages (e.g., 19% VAT).
+
+Context:
+    Part of the pricing domain. Each TaxClass represents a distinct taxation
+    rule that can be applied to price calculations in ERP and shop systems.
+
+Fields:
+    - name (CharField, unique): Human-readable name for the tax class (e.g., "Standard VAT").
+    - rate (DecimalField, 5,4): Tax rate as a decimal fraction (0–1, e.g., 0.1900 = 19%).
+    - created_at / updated_at (DateTimeField): Audit timestamps.
+
+Relations:
+    - May be referenced by products, price rules, or invoice logic in other models.
+
+Used by:
+    - Pricing and billing systems to apply the correct tax rate
+    - ERP processes for compliance and reporting
+    - Import and catalog services for mapping external tax definitions
+
+Depends on:
+    - Django ORM (validation and constraints)
+
+Example:
+    >>> from apps.pricing.models import TaxClass
+    >>> vat = TaxClass.objects.create(name="Standard VAT", rate="0.1900")
+    >>> print(vat)
+    Standard VAT (0.1900)
 """
+
+
 from __future__ import annotations
 
 from django.db import models
@@ -841,7 +1371,55 @@ class TaxClass(models.Model):
 
 # ===== FILE: apps/pricing/models/sales_channel_variant_price.py =====
 # apps/pricing/models/sales_channel_variant_price.py
-# Created according to the user's Copilot Base Instructions.
+"""
+Purpose:
+    Represents the price of a specific ChannelVariant within a PriceList.
+    Each record defines the value of a variant’s price in a given sales channel
+    for a specific time period.
+
+Context:
+    Belongs to the pricing domain. Used to track sales prices across
+    different channels (shops, marketplaces) and supports time-based
+    validity for price changes.
+
+Fields:
+    - organization (FK → core.Organization): The owning organization.
+    - price_list (FK → pricing.PriceList): The price list this price belongs to.
+    - channel_variant (FK → catalog.ChannelVariant): The sales channel + variant.
+    - valid_from (DateTimeField): Timestamp when the price becomes effective.
+    - price (DecimalField): The actual price (non-negative, up to 12,4 digits).
+    - valid_to (DateTimeField): Optional end date for the price validity.
+    - need_update (BooleanField): Whether the price requires a sync/update.
+    - created_at / updated_at (DateTimeField): Audit timestamps.
+
+Relations:
+    - Organization → multiple SalesChannelVariantPrices
+    - PriceList → multiple SalesChannelVariantPrices
+    - ChannelVariant → multiple SalesChannelVariantPrices
+
+Used by:
+    - Pricing services to fetch current or historical prices
+    - Import and sync jobs to update shop/marketplace prices
+    - ERP processes for reporting and analytics
+
+Depends on:
+    - apps.core.models.Organization
+    - apps.pricing.models.PriceList
+    - apps.catalog.models.ChannelVariant
+
+Example:
+    >>> from apps.pricing.models import SalesChannelVariantPrice
+    >>> scvp = SalesChannelVariantPrice.objects.create(
+    ...     organization=org,
+    ...     price_list=pl,
+    ...     channel_variant=cv,
+    ...     valid_from="2025-01-01T00:00:00Z",
+    ...     price="99.9900"
+    ... )
+    >>> print(scvp)
+    [org=1] RETAIL-2025/ChannelVariant(123) @ 99.9900 from 2025-01-01 00:00:00
+"""
+
 
 from __future__ import annotations
 
@@ -924,7 +1502,53 @@ class SalesChannelVariantPrice(models.Model):
 
 
 # ===== FILE: apps/pricing/models/price_list.py =====
-# Created according to the user's Copilot Base Instructions.
+# apps/pricing/models/price_list.py
+"""
+Purpose:
+    Represents a price list definition within an organization.
+    Each price list groups together prices in a given currency and
+    can be used for either sales or procurement contexts.
+
+Context:
+    Belongs to the pricing domain. PriceLists are the containers for
+    product/variant pricing records and are associated with a single currency.
+
+Fields:
+    - organization (FK → core.Organization): The owning organization.
+    - price_list_code (CharField, max 20): Unique code per organization.
+    - price_list_description (CharField, max 200): Human-readable description.
+    - kind (CharField, max 1): Type of list, 'S' (sales) or 'P' (procurement).
+    - currency (FK → core.Currency): Currency of all prices in this list.
+    - is_active (BooleanField): Whether the price list is active.
+    - created_at / updated_at (DateTimeField): Audit timestamps.
+
+Relations:
+    - Organization → multiple PriceLists
+    - Currency → multiple PriceLists
+    - PriceList → referenced by price detail tables (e.g., variant prices)
+
+Used by:
+    - Sales processes to fetch customer price lists
+    - Procurement processes to manage supplier price lists
+    - Pricing services and ERP import routines
+
+Depends on:
+    - apps.core.models.Organization
+    - apps.core.models.Currency
+
+Example:
+    >>> from apps.pricing.models import PriceList
+    >>> pl = PriceList.objects.create(
+    ...     organization=org,
+    ...     price_list_code="RETAIL-2025",
+    ...     price_list_description="Retail price list for 2025",
+    ...     kind="S",
+    ...     currency=eur
+    ... )
+    >>> print(pl)
+    [Org1] RETAIL-2025 (S)
+"""
+
 
 from __future__ import annotations
 
@@ -984,8 +1608,79 @@ class PriceList(models.Model):
 
 
 # ===== FILE: apps/catalog/models/product_variant.py =====
+
 # apps/catalog/models/product_variant.py
-# Created according to the user's permanent Copilot Base Instructions.
+"""
+Purpose:
+    Defines the ProductVariant entity, which represents a sellable unit (SKU).
+    Captures identifiers, logistics data, order constraints, availability,
+    and marketing attributes that extend the base Product.
+
+Context:
+    Belongs to the `catalog` app. Each ProductVariant links a Product with
+    its Packing, Origin, and State. Variants are the concrete SKUs used for
+    procurement, pricing, stock, and sales channel operations.
+
+Fields:
+    - organization (FK → core.Organization): Owning organization (multi-tenant scope).
+    - product (FK → catalog.Product): The base product this variant belongs to.
+    - packing (FK → catalog.Packing): Packaging unit of this variant.
+    - origin (FK → catalog.Origin): Origin classification code.
+    - state (FK → catalog.State): State classification code.
+    - sku (CharField, 120): Internal stock-keeping unit identifier.
+    - ean (CharField, 14): Standardized GTIN/EAN code (optional, indexed).
+    - barcode (CharField, 64): Non-standard or supplier barcode (optional).
+    - customs_code (IntegerField): Customs tariff number (optional).
+    - weight / width / height / length (DecimalField): Logistics dimensions.
+    - eclass_code (CharField, 16): International eCl@ss classification (optional).
+    - stock_quantity / available_stock (IntegerField): Stock and availability data.
+    - is_available (BooleanField): Availability flag from supplier API.
+    - shipping_free (BooleanField): Free shipping flag.
+    - min_purchase / max_purchase / purchase_steps (IntegerField): Order constraints.
+    - is_topseller (BooleanField): Marketing flag for top seller status.
+    - is_active (BooleanField): Whether this variant is active.
+    - created_at / updated_at (DateTimeField): Audit timestamps.
+
+Relations:
+    - Organization → multiple ProductVariants
+    - Product → multiple ProductVariants
+    - Packing → multiple ProductVariants
+    - Origin → multiple ProductVariants
+    - State → multiple ProductVariants
+    - ProductVariant ↔ ChannelVariant (publish variants to channels)
+    - ProductVariant ↔ SupplierProduct (procurement linkage)
+
+Used by:
+    - apps.catalog.models.Product
+    - apps.catalog.models.ChannelVariant
+    - apps.procurement.models.SupplierProduct
+    - apps.pricing.models.SalesChannelVariantPrice
+
+Depends on:
+    - core.Organization
+    - catalog.Product
+    - catalog.Packing
+    - catalog.Origin
+    - catalog.State
+
+Example:
+    >>> from apps.catalog.models import ProductVariant
+    >>> pv = ProductVariant.objects.create(
+    ...     organization=org,
+    ...     product=prod,
+    ...     packing=pack,
+    ...     origin=orig,
+    ...     state=state,
+    ...     sku="SKU-123",
+    ...     ean="4006381333931",
+    ...     weight="1.250",
+    ... )
+    >>> print(pv)
+    [org=1] SKU=SKU-123 (product_id=42)
+"""
+
+
+
 from __future__ import annotations
 
 from django.db import models
@@ -1097,7 +1792,43 @@ class ProductVariant(models.Model):
 
 # ===== FILE: apps/catalog/models/origin.py =====
 #!/usr/bin/env python3
-# Created according to the user's permanent Copilot Base Instructions.
+
+# apps/catalog/models/origin.py
+"""
+Purpose:
+    Define origin master data using a single-letter code.
+    Provides a lightweight reference for categorizing products
+    or variants by their origin or classification.
+
+Context:
+    Part of the `catalog` app. Serves as a reference/master table
+    used in product variant definitions to tag items with an origin
+    attribute for logistics, reporting, or integration purposes.
+
+Fields:
+    - origin_code (CharField, PK, length=1): Unique single-letter code
+      identifying the origin.
+    - origin_description (CharField, max 100): Optional descriptive
+      label or name for the origin.
+
+Relations:
+    - Referenced by ProductVariant and potentially other catalog models
+      to denote the origin classification of an item.
+
+Used by:
+    - Catalog (ProductVariant)
+    - Any downstream reporting or integration requiring origin info
+
+Depends on:
+    - Django ORM
+
+Example:
+    >>> from apps.catalog.models import Origin
+    >>> Origin.objects.create(origin_code="E", origin_description="Europe")
+    <Origin: E — Europe>
+"""
+
+
 from __future__ import annotations
 from django.db import models
 
@@ -1128,7 +1859,37 @@ class Origin(models.Model):
 
 # ===== FILE: apps/catalog/models/state.py =====
 #!/usr/bin/env python3
-# Created according to the user's permanent Copilot Base Instructions.
+# apps/catalog/models/state.py
+"""
+Purpose:
+    Defines the State master data entity, represented by a single-letter code.
+    Used to classify product variants by condition/state within the catalog.
+
+Context:
+    Part of the `catalog` app. Each ProductVariant references a State to
+    indicate its condition (e.g., new, refurbished, used).
+
+Fields:
+    - state_code (CharField, 1, PK): Single-letter identifier of the state.
+    - state_description (CharField, 100): Optional descriptive label.
+
+Relations:
+    - ProductVariant → references State via FK.
+
+Used by:
+    - apps.catalog.models.ProductVariant (FK relation via state)
+
+Depends on:
+    - Django ORM
+    - core.Organization (indirectly via ProductVariant usage)
+
+Example:
+    >>> from apps.catalog.models import State
+    >>> s = State.objects.create(state_code="N", state_description="New")
+    >>> print(s)
+    N — New
+"""
+
 from __future__ import annotations
 from django.db import models
 
@@ -1160,7 +1921,65 @@ class State(models.Model):
 
 # ===== FILE: apps/catalog/models/product.py =====
 # apps/catalog/models/product.py
-# Created according to the user's permanent Copilot Base Instructions.
+
+# apps/catalog/models/product.py
+"""
+Purpose:
+    Define master product data shared across all variants.
+    Stores catalog-wide attributes such as name, manufacturer,
+    part number, SEO metadata, and marketing flags.
+
+Context:
+    Part of the `catalog` app. Products serve as the base entity for
+    all sellable variants (ProductVariant) and are referenced by
+    channel-specific models. Provides a stable anchor for procurement,
+    pricing, and shop integration.
+
+Fields:
+    - id (AutoField): Primary key.
+    - organization (FK → core.Organization): Owning organization.
+    - name (CharField, 200): Human-readable product name.
+    - slug (CharField, 200): Unique slug within an organization.
+    - manufacturer (FK → catalog.Manufacturer): Brand or vendor.
+    - manufacturer_part_number (CharField, 100): Raw part number.
+    - manufacturer_part_number_norm (GeneratedField, 100): Normalized part
+      number, computed via PostgreSQL `REGEXP_REPLACE`.
+    - product_group (FK → catalog.ProductGroup): Classification/group.
+    - description (TextField): Long product description, optional.
+    - meta_title / meta_description / keywords: SEO fields.
+    - is_new (Boolean): Marketing flag (new release).
+    - is_closeout (Boolean): Marketing flag (discontinued).
+    - release_date (DateField): Release information.
+    - is_active (Boolean): Availability flag.
+    - created_at / updated_at (DateTimeField): Audit timestamps.
+
+Relations:
+    - Organization → multiple Products.
+    - Manufacturer → multiple Products.
+    - ProductGroup → multiple Products.
+    - Referenced by ProductVariant and ChannelVariant.
+
+Used by:
+    - Catalog (ProductVariant definitions).
+    - Pricing and Procurement modules.
+    - External integrations (shop systems, supplier APIs).
+
+Depends on:
+    - Django ORM
+    - core.Organization
+    - catalog.Manufacturer
+    - catalog.ProductGroup
+
+Example:
+    >>> from apps.catalog.models import Product
+    >>> Product.objects.filter(
+    ...     organization__org_code=1,
+    ...     is_active=True,
+    ...     is_closeout=False,
+    ... )
+"""
+
+
 from __future__ import annotations
 
 from django.db import models
@@ -1271,8 +2090,53 @@ class Product(models.Model):
 
 # ===== FILE: apps/catalog/models/channel_variant.py =====
 # apps/catalog/models/channel_variant.py
-# Created according to the user's Copilot Base Instructions.
-# the
+"""
+Purpose:
+    Represent the assignment of a ProductVariant to a sales Channel
+    within a specific Organization. Defines availability, publishing
+    flags, synchronization state, and external shop IDs.
+
+Context:
+    Part of the `catalog` app. Used to manage how product variants
+    are distributed into different sales channels (e.g. webshop,
+    marketplace). Central for integration and synchronization.
+
+Fields:
+    - organization (FK → core.Organization): Owning organization.
+    - channel (FK → catalog.Channel): The sales channel.
+    - variant (FK → catalog.ProductVariant): The specific product variant.
+    - publish (BooleanField): Flag whether this variant is published.
+    - is_active (BooleanField): Active/inactive marker.
+    - need_shop_update (BooleanField): Marks pending synchronization.
+    - shop_product_id (CharField): External shop product identifier.
+    - shop_variant_id (CharField): External shop variant identifier.
+    - last_synced_at (DateTimeField): Timestamp of last synchronization.
+    - last_error (TextField): Stores last sync error message.
+    - meta_json (JSONField): Flexible metadata/extensions.
+    - created_at / updated_at (DateTimeField): Audit timestamps.
+
+Relations:
+    - Organization → multiple ChannelVariants
+    - Channel → multiple ChannelVariants
+    - ProductVariant → multiple ChannelVariants
+
+Used by:
+    - Synchronization services to external shops
+    - Pricing and publication processes
+    - Monitoring/reporting of channel sync states
+
+Depends on:
+    - Django ORM
+    - core.Organization
+    - catalog.Channel
+    - catalog.ProductVariant
+
+Example:
+    >>> from apps.catalog.models import ChannelVariant
+    >>> ChannelVariant.objects.filter(channel__kind="shop", publish=True)
+"""
+
+
 
 from __future__ import annotations
 
@@ -1366,9 +2230,61 @@ class ChannelVariant(models.Model):
 
 
 # ===== FILE: apps/catalog/models/product_media.py =====
-# apps/catalog/models/product_media.py
-# Created according to the user's Copilot Base Instructions.
 
+# apps/catalog/models/product_media.py
+"""
+Purpose:
+    Stores media assets (images, videos, documents) for products and variants.
+    Each entry represents one media file with metadata, linked either to a
+    Product or to a specific ProductVariant.
+
+Context:
+    Part of the `catalog` app. Used to manage product images, thumbnails,
+    and other media for display in shop systems and marketplaces.
+
+Fields:
+    - id (BigAutoField): Primary key.
+    - organization (FK → core.Organization): Owner of the media record.
+    - product (FK → catalog.Product): Product to which this media belongs.
+    - variant (FK → catalog.ProductVariant, optional): Specific variant if media
+      is variant-specific; otherwise null.
+    - role (CharField, 20): Media role (e.g., "gallery", "thumbnail").
+    - sort_order (SmallIntegerField): Ordering within the role group.
+    - alt_text (CharField, 200): Alternative text for accessibility/SEO.
+    - media_url (TextField): URL to the media file (e.g., CDN link).
+    - mime (CharField, 100): MIME type if available (e.g., image/jpeg).
+    - width_px / height_px (IntegerField): Dimensions of the media (optional).
+    - file_size (IntegerField): File size in bytes (optional).
+    - is_active (BooleanField): Active flag for filtering.
+    - created_at / updated_at (DateTimeField): Audit timestamps.
+
+Relations:
+    - Organization → multiple ProductMedia
+    - Product → multiple ProductMedia
+    - ProductVariant → multiple ProductMedia (optional)
+
+Used by:
+    - apps.catalog.models.Product (reverse FK)
+    - apps.catalog.models.ProductVariant (reverse FK)
+    - API / frontend layers for rendering product galleries
+
+Depends on:
+    - core.Organization
+    - catalog.Product
+    - catalog.ProductVariant
+
+Example:
+    >>> from apps.catalog.models import ProductMedia
+    >>> pm = ProductMedia.objects.create(
+    ...     organization=org,
+    ...     product=prod,
+    ...     role="gallery",
+    ...     media_url="https://cdn.example.com/img123.jpg",
+    ...     alt_text="Front view of the product"
+    ... )
+    >>> print(pm)
+    [org=1] product=123 gallery #1
+"""
 
 
 from __future__ import annotations
@@ -1436,7 +2352,54 @@ class ProductMedia(models.Model):
 
 # ===== FILE: apps/catalog/models/packing.py =====
 #!/usr/bin/env python3
-# Created according to the permanently stored Copilot Base Instructions.
+
+# apps/catalog/models/packing.py
+"""
+Purpose:
+    Define packaging unit master data within an organization.
+    Each record specifies how items are packed (e.g., single piece,
+    box of 10, pallet), including codes, multipliers, and descriptions.
+
+Context:
+    Part of the `catalog` app. Used in product and procurement workflows
+    to enforce packaging rules for ordering, stock management, and logistics.
+
+Fields:
+    - id (AutoField): Surrogate primary key (SERIAL in SQL).
+    - organization (FK → core.Organization): Owning organization,
+      ensures tenant isolation.
+    - packing_code (SmallIntegerField): Business code identifying
+      the packing unit within an organization.
+    - amount (DecimalField, NUMERIC(10,3)): Multiplier for this unit
+      (default 1.000, e.g. "box of 10").
+    - packing_short_description (CharField, max 20): Short label for display.
+    - packing_description (CharField, max 200): Longer optional description.
+
+Relations:
+    - Organization → multiple Packing definitions.
+    - Referenced by ProductVariant or Procurement models for correct packaging
+      and order handling.
+
+Used by:
+    - Catalog (ProductVariant definition)
+    - Procurement (ordering logic, minimum order units)
+
+Depends on:
+    - Django ORM
+    - core.Organization
+
+Example:
+    >>> from apps.catalog.models import Packing
+    >>> Packing.objects.create(
+    ...     organization=org,
+    ...     packing_code=10,
+    ...     amount=Decimal("10.000"),
+    ...     packing_short_description="Box of 10",
+    ... )
+    <Packing: 10 — Box of 10>
+"""
+
+
 from __future__ import annotations
 
 from decimal import Decimal
@@ -1503,7 +2466,42 @@ class Packing(models.Model):
 
 # ===== FILE: apps/catalog/models/manufacturer.py =====
 #!/usr/bin/env python3
-# Created according to the user's permanent Copilot Base Instructions.
+
+# apps/catalog/models/manufacturer.py
+"""
+Purpose:
+    Represent manufacturer (brand or vendor) master data used in the catalog.
+    Provides a stable numeric code and optional description for consistent
+    brand identification across products and variants.
+
+Context:
+    Part of the `catalog` app. Serves as a reference table to associate
+    products and variants with their brand/vendor for classification,
+    reporting, and external integrations.
+
+Fields:
+    - manufacturer_code (SmallIntegerField, PK): Stable business code
+      uniquely identifying the manufacturer.
+    - manufacturer_description (CharField, max 200): Optional descriptive
+      name or label for the manufacturer.
+
+Relations:
+    - Referenced by Product and ProductVariant models to indicate brand/vendor.
+
+Used by:
+    - Catalog (Product, ProductVariant)
+    - Procurement and reporting modules requiring brand information
+
+Depends on:
+    - Django ORM
+
+Example:
+    >>> from apps.catalog.models import Manufacturer
+    >>> Manufacturer.objects.create(manufacturer_code=101, manufacturer_description="ACME Tools")
+    <Manufacturer: 101 — ACME Tools>
+"""
+
+
 from __future__ import annotations
 from django.db import models
 
@@ -1535,7 +2533,49 @@ class Manufacturer(models.Model):
 
 # ===== FILE: apps/catalog/models/product_group.py =====
 # apps/catalog/models/product_group.py
-# Created according to the user's permanent Copilot Base Instructions.
+
+# apps/catalog/models/product_group.py
+"""
+Purpose:
+    Represents a grouping of products within an organization.
+    Each group is identified by a short code and description.
+
+Context:
+    Part of the `catalog` app. ProductGroups provide a logical structure
+    for organizing Products. Every Product must belong to one ProductGroup.
+    Used in imports, seeding, and catalog management.
+
+Fields:
+    - id (AutoField): Primary key.
+    - organization (FK → core.Organization): Owning organization.
+    - product_group_code (CharField, 20): Unique code per organization.
+    - product_group_description (CharField, 200): Optional human-readable label.
+
+Relations:
+    - Organization → multiple ProductGroups.
+    - ProductGroup → multiple Products (via FK in Product).
+
+Used by:
+    - apps/catalog/models/product.py (FK to ProductGroup).
+    - Import and seeding services that build catalog structures.
+
+Depends on:
+    - Django ORM
+    - core.Organization
+
+Example:
+    >>> from apps.catalog.models import ProductGroup
+    >>> pg = ProductGroup.objects.create(
+    ...     organization=org,
+    ...     product_group_code="FILTERS",
+    ...     product_group_description="Air and oil filters"
+    ... )
+    >>> print(pg)
+    FILTERS — Air and oil filters
+"""
+
+
+
 from __future__ import annotations
 
 from django.db import models
@@ -1590,7 +2630,48 @@ class ProductGroup(models.Model):
 
 # ===== FILE: apps/catalog/models/channel.py =====
 # apps/catalog/models/channel.py
-# Created according to the user's Copilot Base Instructions.
+"""
+Purpose:
+    Define the Channel model representing a sales or distribution channel
+    (e.g., webshop, marketplace) within an organization. Captures its code,
+    name, kind, and base currency.
+
+Context:
+    Part of the `catalog` app. Channels represent the entry points through which
+    products and prices are published. They are used in pricing, procurement,
+    and integration with external systems (e.g., shops, marketplaces).
+
+Fields:
+    - id (AutoField): Primary key for the channel.
+    - organization (FK → core.Organization): The owning organization.
+    - channel_code (CharField, max 20): Short code identifying the channel
+      within an organization (unique per organization).
+    - channel_name (CharField, max 200): Human-readable channel name.
+    - kind (CharField, max 50): Type of channel ("shop" or "marketplace").
+    - base_currency (FK → core.Currency): Currency in which prices are defined.
+    - is_active (BooleanField): Whether this channel is active.
+    - created_at / updated_at (DateTimeField): Audit timestamps.
+
+Relations:
+    - Organization → multiple Channels
+    - Currency → multiple Channels
+    - Channel ↔ Product/Variant pricing via related models (e.g. ChannelVariant)
+
+Used by:
+    - Pricing (PriceGroup, PriceList, SalesChannelVariantPrice)
+    - Procurement (for supplier channel relations, if applicable)
+    - Services for integration with external systems
+
+Depends on:
+    - Django ORM
+    - core.Organization
+    - core.Currency
+
+Example:
+    # Get all active marketplace channels for org 1
+    Channel.objects.filter(organization__org_code=1, kind="marketplace", is_active=True)
+"""
+
 
 
 
@@ -1654,8 +2735,46 @@ class Channel(models.Model):
 
 # ===== FILE: apps/sales/models/sales_order_line.py =====
 # apps/sales/models/sales_order_line.py
-#!/usr/bin/env python3
-# Created according to the user's permanent Copilot Base Instructions.
+"""
+Purpose:
+    Represents an individual line item in a sales order.
+    Each line links to a product variant, with ordered quantity and price.
+
+Context:
+    Child of SalesOrder. Used to record which items are sold,
+    at which price, and in what quantity. Basis for fulfillment and invoicing.
+
+Fields:
+    - organization (FK → Organization): Tenant isolation.
+    - sales_order (FK → SalesOrder): Parent sales order reference.
+    - row_no (SmallInteger): Unique row number per order.
+    - variant (FK → ProductVariant): Ordered product variant.
+    - qty (Decimal): Ordered quantity (> 0).
+    - price_at_order (Decimal): Net price per unit at time of order.
+    - note (TextField): Optional line-level note.
+    - is_active (Bool): Logical deletion flag.
+    - created_at / updated_at: System timestamps.
+
+Constraints:
+    - (organization, sales_order, row_no) unique.
+    - qty must be > 0.
+    - price_at_order must be ≥ 0.
+
+Example:
+    >>> from apps.sales.models import SalesOrderLine
+    >>> line = SalesOrderLine.objects.create(
+    ...     organization=org,
+    ...     sales_order=so,
+    ...     row_no=1,
+    ...     variant=variant,
+    ...     qty=10,
+    ...     price_at_order=99.99,
+    ... )
+    >>> print(line)
+    [org=MyOrg] SO=SO-2025-001 #1 -> VAR=SKU123
+"""
+
+
 from __future__ import annotations
 
 from django.db import models
@@ -1734,8 +2853,48 @@ class SalesOrderLine(models.Model):
 
 # ===== FILE: apps/sales/models/sales_order.py =====
 # apps/sales/models/sales_order.py
-#!/usr/bin/env python3
-# Created according to the user's permanent Copilot Base Instructions.
+"""
+Purpose:
+    Represents the header of a sales order, scoped by organization.
+    Tracks business partner, currency, status, and important dates.
+
+Context:
+    Part of the sales domain. This table is the parent for sales order lines
+    and drives fulfillment, invoicing, and reporting.
+
+Fields:
+    - organization (FK → Organization): Tenant isolation.
+    - customer (FK → Customer): Buyer reference.
+    - order_number (CharField): Unique per organization.
+    - status (CharField): Lifecycle state (draft|confirmed|shipped|invoiced|cancelled).
+    - currency (FK → Currency): Transaction currency.
+    - expected_date (DateField): Optional promised delivery date.
+    - notes (TextField): Optional free-text notes.
+    - is_active (Bool): Logical deletion flag.
+    - created_at / updated_at: System timestamps.
+
+Relations:
+    - SalesOrder → multiple SalesOrderLine (items).
+    - Linked to invoicing, shipping, and pricing modules.
+
+Constraints:
+    - (organization, order_number) unique.
+    - (organization, id) unique for safety.
+    - Status restricted by check constraint.
+
+Example:
+    >>> from apps.sales.models import SalesOrder
+    >>> so = SalesOrder.objects.create(
+    ...     organization=org,
+    ...     customer=cust,
+    ...     order_number="SO-2025-001",
+    ...     currency=eur,
+    ... )
+    >>> print(so)
+    [org=MyOrg] SO SO-2025-001 (draft)
+"""
+
+
 from __future__ import annotations
 
 from django.db import models
@@ -1814,7 +2973,62 @@ class SalesOrder(models.Model):
 
 # ===== FILE: apps/partners/models/supplier.py =====
 # apps/partners/models/supplier.py
-# Created according to the user's permanent Copilot Base Instructions.
+"""
+Purpose:
+    Represents supplier master data within an organization.
+    Each supplier is uniquely identified by a supplier code and
+    may include commercial, contact, and logistical information.
+
+Context:
+    Part of the partners app. Suppliers are organizationally scoped
+    entities used for procurement, import mapping, and integrations.
+
+Fields:
+    - organization (FK → core.Organization): Owning organization.
+    - supplier_code (CharField, 20): Unique supplier code per organization.
+    - is_active (BooleanField): Whether the supplier is active.
+    - supplier_description (CharField, 200): Optional description/name.
+    - contact_name (CharField, 100): Primary contact person.
+    - email (CharField, 200): Contact email address.
+    - phone (CharField, 50): Primary phone number.
+    - website (CharField, 200): Website URL.
+    - tax_id (CharField, 50): Tax/VAT identifier.
+    - address_line1 (CharField, 200): Address line 1.
+    - address_line2 (CharField, 200): Address line 2.
+    - postal_code (CharField, 20): Postal/ZIP code.
+    - city (CharField, 100): City name.
+    - country_code (CharField, 2): ISO 3166-1 alpha-2 code.
+    - payment_terms (CharField, 50): Payment term shorthand (e.g., NET30).
+    - is_preferred (BooleanField): Whether marked as preferred supplier.
+    - lead_time_days (SmallIntegerField): Typical lead time in days.
+    - comment (CharField, 200): Optional internal comment.
+    - created_at / updated_at (DateTimeField): Audit timestamps.
+
+Relations:
+    - Organization → multiple Suppliers
+
+Used by:
+    - Procurement workflows
+    - Import mapping (apps/imports)
+    - Inventory and purchase order processing
+
+Depends on:
+    - apps.core.models.Organization
+    - Django ORM
+
+Example:
+    >>> from apps.partners.models import Supplier
+    >>> s = Supplier.objects.create(
+    ...     organization=org,
+    ...     supplier_code="SUP001",
+    ...     supplier_description="MegaParts Ltd.",
+    ...     email="sales@megaparts.com"
+    ... )
+    >>> print(s)
+    SUP001 — MegaParts Ltd.
+"""
+
+
 from __future__ import annotations
 
 from django.db import models
@@ -1886,6 +3100,10 @@ class Supplier(models.Model):
     lead_time_days = models.SmallIntegerField(
         default=0, help_text="Typical lead time in days."
     )
+    comment = models.CharField(
+        max_length=200, blank=True, default="", help_text="comment"
+    )  # Keep CharField for cross-DB portability; can switch to EmailField later.
+
 
     # Timestamps for parity with other tables
     created_at = models.DateTimeField(db_default=Now(), editable=False)
@@ -1915,8 +3133,58 @@ class Supplier(models.Model):
 
 # ===== FILE: apps/partners/models/customer.py =====
 # apps/partners/models/customer.py
-#!/usr/bin/env python3
-# Created according to the user's permanent Copilot Base Instructions.
+"""
+Purpose:
+    Represents customer master data within an organization.
+    Each customer is uniquely identified by a customer code and
+    may include contact and billing information.
+
+Context:
+    Part of the partners app. Customers are organizationally scoped
+    entities used for sales, invoicing, and integrations.
+
+Fields:
+    - organization (FK → core.Organization): Owning organization.
+    - customer_code (CharField, 20): Unique customer code per organization.
+    - is_active (BooleanField): Flag to indicate if the customer is active.
+    - customer_description (CharField, 200): Optional description/name.
+    - contact_name (CharField, 100): Primary contact person.
+    - email (CharField, 200): Contact email address.
+    - phone (CharField, 50): Primary phone number.
+    - website (CharField, 200): Website URL.
+    - tax_id (CharField, 50): Tax or VAT identifier.
+    - address_line1 (CharField, 200): Address line 1.
+    - address_line2 (CharField, 200): Address line 2.
+    - postal_code (CharField, 20): Postal or ZIP code.
+    - city (CharField, 100): City name.
+    - country_code (CharField, 2): ISO 3166-1 alpha-2 code.
+    - payment_terms (CharField, 50): Payment term shorthand (e.g., NET30).
+    - comment (CharField, 200): Optional internal comment.
+    - created_at / updated_at (DateTimeField): Audit timestamps.
+
+Relations:
+    - Organization → multiple Customers
+
+Used by:
+    - Sales, invoicing, procurement, and integration modules.
+
+Depends on:
+    - apps.core.models.Organization
+    - Django ORM
+
+Example:
+    >>> from apps.partners.models import Customer
+    >>> c = Customer.objects.create(
+    ...     organization=org,
+    ...     customer_code="CUST001",
+    ...     customer_description="ACME Corp",
+    ...     email="contact@acme.com"
+    ... )
+    >>> print(c)
+    CUST001 — ACME Corp
+"""
+
+
 from __future__ import annotations
 
 from django.db import models
@@ -1984,6 +3252,9 @@ class Customer(models.Model):
     payment_terms = models.CharField(
         max_length=50, blank=True, default="", help_text="Payment terms shorthand (e.g., NET30)."
     )
+    comment = models.CharField(
+        max_length=200, blank=True, default="", help_text="comment"
+    )  # Keep CharField for cross-DB portability; can switch to EmailField later.
 
     # Timestamps to match project standard (DB defaults via NOW())
     created_at = models.DateTimeField(db_default=Now(), editable=False)
@@ -2014,7 +3285,56 @@ class Customer(models.Model):
 
 # ===== FILE: apps/procurement/models/purchase_order_line.py =====
 # apps/procurement/models/purchase_order_line.py
-# Created according to the user's permanent Copilot Base Instructions.
+"""
+Purpose:
+    Represents a line item within a purchase order, detailing the product,
+    quantity, and price agreed at the time of order placement.
+
+Context:
+    Part of the procurement domain. PurchaseOrderLine items belong to a
+    PurchaseOrder and specify the concrete products (via SupplierProduct),
+    quantities, and pricing used in supplier transactions.
+
+Fields:
+    - organization (FK → core.Organization): Owning organization.
+    - purchase_order (FK → procurement.PurchaseOrder): Parent purchase order.
+    - row_no (SmallIntegerField): Line number, unique per order and organization.
+    - supplier_product (FK → procurement.SupplierProduct): Product reference
+      from a supplier catalog.
+    - qty (DecimalField): Quantity ordered, must be > 0.
+    - price_at_order (DecimalField): Unit price at the time of order, >= 0.
+    - note (TextField, optional): Freeform note for this line.
+    - is_active (BooleanField): Whether the line is active.
+    - created_at / updated_at (DateTimeField): Audit timestamps.
+
+Relations:
+    - PurchaseOrder → multiple PurchaseOrderLines
+    - SupplierProduct → multiple PurchaseOrderLines
+    - Organization → multiple PurchaseOrderLines
+
+Used by:
+    - Procurement workflows for order fulfillment and invoicing.
+    - Stock management and ERP integrations to update inventory.
+    - Reporting on purchase details and supplier performance.
+
+Depends on:
+    - apps.core.models.Organization
+    - apps.procurement.models.PurchaseOrder
+    - apps.procurement.models.SupplierProduct
+
+Example:
+    >>> from apps.procurement.models import PurchaseOrderLine
+    >>> pol = PurchaseOrderLine.objects.create(
+    ...     organization=org,
+    ...     purchase_order=po,
+    ...     row_no=1,
+    ...     supplier_product=sp,
+    ...     qty=10,
+    ...     price_at_order="99.99",
+    ... )
+    >>> print(pol)
+    [org=1] PO=PO-2025-001 #1 -> SP=SP-123
+"""
 
 
 from __future__ import annotations
@@ -2091,7 +3411,57 @@ class PurchaseOrderLine(models.Model):
 
 # ===== FILE: apps/procurement/models/purchase_order.py =====
 # apps/procurement/models/purchase_order.py
-# Created according to the user's permanent Copilot Base Instructions.
+"""
+Purpose:
+    Represents a purchase order created by an organization to procure goods
+    from a supplier. Captures order number, status, currency, and delivery info.
+
+Context:
+    Part of the procurement domain. Purchase orders are used to formalize
+    and track purchasing activities, serving as the header document for
+    ordered items.
+
+Fields:
+    - organization (FK → core.Organization): Owning organization.
+    - supplier (FK → partners.Supplier): Supplier to whom the order is placed.
+    - order_number (CharField, max 30): Unique identifier per organization.
+    - status (CharField, max 20): Workflow state ("draft", "approved", "ordered",
+      "received", "cancelled").
+    - currency (FK → core.Currency): Currency in which the order is placed.
+    - expected_date (DateField, optional): Expected delivery date.
+    - notes (TextField, optional): Freeform remarks.
+    - is_active (BooleanField): Whether the order is currently active.
+    - created_at / updated_at (DateTimeField): Audit timestamps.
+
+Relations:
+    - Organization → multiple PurchaseOrders
+    - Supplier → multiple PurchaseOrders
+    - Currency → multiple PurchaseOrders
+    - To be extended by PurchaseOrderLine for itemized order positions.
+
+Used by:
+    - Procurement workflows to manage supplier orders.
+    - ERP processes for stock, invoicing, and financial reconciliation.
+    - Reporting to track supplier performance and order statuses.
+
+Depends on:
+    - apps.core.models.Organization
+    - apps.core.models.Currency
+    - apps.partners.models.Supplier
+
+Example:
+    >>> from apps.procurement.models import PurchaseOrder
+    >>> po = PurchaseOrder.objects.create(
+    ...     organization=org,
+    ...     supplier=sup,
+    ...     order_number="PO-2025-001",
+    ...     status="draft",
+    ...     currency=eur,
+    ... )
+    >>> print(po)
+    [org=1] PO PO-2025-001 (draft)
+"""
+
 
 from __future__ import annotations
 
@@ -2157,7 +3527,66 @@ class PurchaseOrder(models.Model):
 
 # ===== FILE: apps/procurement/models/supplier_product.py =====
 # apps/procurement/models/supplier_product.py
-# Created according to the user's permanent Copilot Base Instructions.
+"""
+Purpose:
+    Defines the SupplierProduct entity, linking a ProductVariant with a Supplier.
+    Stores supplier-specific identifiers, packaging details, ordering constraints,
+    and procurement metadata. Forms the basis for managing supplier relationships
+    for each variant.
+
+Context:
+    Part of the procurement domain. This model allows the system to store and
+    differentiate how the same product variant is offered by different suppliers.
+    It supports lead times, MOQs, and supplier-specific SKUs.
+
+Fields:
+    - organization (FK → core.Organization): Tenant scoping.
+    - supplier (FK → partners.Supplier): The supplying vendor.
+    - variant (FK → catalog.ProductVariant): The product variant being supplied.
+    - supplier_sku (CharField): Supplier’s internal SKU/article number.
+    - supplier_description (CharField): Supplier-provided description.
+    - pack_size (DecimalField): Number of base units per supplier pack.
+    - min_order_qty (DecimalField): Minimum order quantity at supplier.
+    - lead_time_days (IntegerField): Delivery lead time in days.
+    - is_active (BooleanField): Marks if the supplier product is valid.
+    - is_preferred (BooleanField): Flags a preferred supplier.
+    - notes (TextField): Free-text notes for procurement.
+    - created_at / updated_at (DateTimeField): Audit timestamps.
+
+Relations:
+    - Organization → multiple SupplierProducts
+    - Supplier → multiple SupplierProducts
+    - ProductVariant → multiple SupplierProducts
+    - SupplierProduct → SupplierPrice (child records for price tiers)
+
+Used by:
+    - Procurement processes for creating purchase orders.
+    - Supplier price management (via SupplierPrice and SupplierQuantityPrice).
+    - ERP functions that calculate cost or choose preferred supplier.
+
+Depends on:
+    - apps.core.models.Organization
+    - apps.partners.models.Supplier
+    - apps.catalog.models.ProductVariant
+    - apps.procurement.models.SupplierPrice (downstream dependency)
+
+Example:
+    >>> from apps.procurement.models import SupplierProduct
+    >>> sp = SupplierProduct.objects.create(
+    ...     organization=org,
+    ...     supplier=supplier,
+    ...     variant=variant,
+    ...     supplier_sku="SUP-12345",
+    ...     pack_size=10,
+    ...     min_order_qty=50,
+    ...     lead_time_days=7,
+    ... )
+    >>> print(sp)
+    [org=1] supplier=SUP sku=SUP-12345 -> variant=SKU-001
+"""
+
+
+
 from __future__ import annotations
 
 from django.db import models
@@ -2263,7 +3692,49 @@ class SupplierProduct(models.Model):
 
 # ===== FILE: apps/procurement/models/supplier_quantity_price.py =====
 # apps/procurement/models/supplier_quantity_price.py
-# Created according to the user's permanent Copilot Base Instructions.
+"""
+Purpose:
+    Defines quantity-based price tiers for a supplier’s product.
+    Complements SupplierPrice by enabling stepped pricing models when
+    a single flat price (unit_price) is not sufficient.
+
+Context:
+    Part of the procurement domain. This model allows tiered pricing
+    based on minimum order quantities. For example, buying 100 units
+    may have a lower unit price than buying 10.
+
+Fields:
+    - supplier_price (FK → SupplierPrice): Links to the supplier price header.
+    - min_quantity (DecimalField): Minimum quantity for this tier.
+    - unit_price (DecimalField): Net purchase price per unit (excl. VAT).
+
+Relations:
+    - SupplierPrice → multiple SupplierQuantityPrice (tiers).
+    - SupplierQuantityPrice belongs to exactly one SupplierPrice.
+
+Used by:
+    - Procurement calculations (choosing correct tier for an order).
+    - ERP price imports from suppliers with graduated pricing.
+    - PO line creation when selecting best available tier.
+
+Depends on:
+    - apps.procurement.models.SupplierPrice
+
+Constraints:
+    - Unique per (supplier_price, min_quantity).
+    - Ordered by min_quantity ascending.
+
+Example:
+    >>> from apps.procurement.models import SupplierQuantityPrice
+    >>> tier = SupplierQuantityPrice.objects.create(
+    ...     supplier_price=sp,
+    ...     min_quantity=100,
+    ...     unit_price=9.99,
+    ... )
+    >>> print(tier)
+    100+ → 9.99 (EUR)
+"""
+
 from __future__ import annotations
 
 from django.db import models
@@ -2313,7 +3784,57 @@ class SupplierQuantityPrice(models.Model):
 
 
 # ===== FILE: apps/procurement/models/supplier_price.py =====
-# Created according to the user's permanent Copilot Base Instructions.
+# apps/procurement/models/supplier_price.py
+"""
+Purpose:
+    Represents supplier-specific purchasing price headers. Defines currency,
+    validity ranges, and optional flat prices. Tiered pricing details are
+    maintained in SupplierQuantityPrice.
+
+Context:
+    Part of the procurement domain. SupplierPrice acts as the header for
+    supplier pricing definitions. It ensures each supplier product has
+    structured pricing information that may include validity periods and
+    multiple tiers.
+
+Fields:
+    - supplier_product (FK → procurement.SupplierProduct): The product this
+      supplier price belongs to.
+    - currency (FK → core.Currency): Currency of the price list (ISO 4217).
+    - unit_price (DecimalField, optional): Flat fallback price, without VAT.
+    - min_quantity (DecimalField, optional): Minimum quantity for applying the
+      flat unit price.
+    - valid_from / valid_to (DateField, optional): Validity period of this price.
+    - is_active (BooleanField): Whether this price is currently active.
+    - created_at / updated_at (DateTimeField): Audit timestamps.
+
+Relations:
+    - SupplierProduct → multiple SupplierPrices
+    - SupplierPrice → multiple SupplierQuantityPrices (via related_name="prices")
+    - Currency → multiple SupplierPrices
+
+Used by:
+    - Procurement for cost calculation, supplier integration, and order validation.
+    - ERP workflows that determine applicable purchasing prices.
+
+Depends on:
+    - apps.procurement.models.SupplierProduct
+    - apps.core.models.Currency
+    - apps.procurement.models.SupplierQuantityPrice (child table)
+
+Example:
+    >>> from apps.procurement.models import SupplierPrice
+    >>> sp = SupplierPrice.objects.create(
+    ...     supplier_product=supplier_product,
+    ...     currency=eur,
+    ...     unit_price="12.50",
+    ...     min_quantity="5",
+    ... )
+    >>> print(sp)
+    SP-123 12.50 EUR
+"""
+
+
 from __future__ import annotations
 
 from django.db import models

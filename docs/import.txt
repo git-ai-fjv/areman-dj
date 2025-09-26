@@ -4,3 +4,16 @@
 
  python manage.py universal_excel_importer --supplier 70002 --file /home/fjv/work/areman-dj/data/import/komatsu_06-25_short.xlsx
 
+### settings:
+python manage.py seed_import_map_komatsu --supplier 70002 --org 1
+
+### standard import
+## delete
+
+###
+
+python manage.py clear_supplier_imports --supplier 70002
+
+python manage.py import_komatsu
+
+python manage.py normalize_records --supplier 70002
